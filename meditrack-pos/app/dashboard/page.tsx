@@ -16,14 +16,14 @@ interface Medicine {
 }
 
 const medicines: Medicine[] = [
-  { id: '1', name: 'Paracetamol 500mg', category: 'Pain Relief', price: 25.00, stock: 150, image: '/logo.png', instructions: 'Every 4 hours, take with meals', expiryDate: '2026-06-15' },
-  { id: '2', name: 'Amoxicillin 250mg', category: 'Antibiotic', price: 85.00, stock: 80, image: '/logo.png', instructions: 'Every 8 hours, take with meals', expiryDate: '2026-05-20' },
-  { id: '3', name: 'Ibuprofen 400mg', category: 'Pain Relief', price: 35.00, stock: 120, image: '/logo.png', instructions: 'Every 6 hours, take after meals', expiryDate: '2026-12-01' },
-  { id: '4', name: 'Cetirizine 10mg', category: 'Allergy', price: 45.00, stock: 200, image: '/logo.png', instructions: 'Once daily, take at night', expiryDate: '2026-08-30' },
-  { id: '5', name: 'Metformin 500mg', category: 'Diabetes', price: 120.00, stock: 60, image: '/logo.png', instructions: 'Twice daily, take with meals', expiryDate: '2026-03-15' },
-  { id: '6', name: 'Omeprazole 20mg', category: 'Gastric', price: 65.00, stock: 90, image: '/logo.png', instructions: 'Once daily, before breakfast', expiryDate: '2026-11-20' },
-  { id: '7', name: 'Salbutamol Inhaler', category: 'Respiratory', price: 150.00, stock: 40, image: '/logo.png', instructions: 'When needed, max 2 puffs', expiryDate: '2026-04-01' },
-  { id: '8', name: 'Vitamin C 500mg', category: 'Supplements', price: 55.00, stock: 300, image: '/logo.png', instructions: 'Once daily, take with meals', expiryDate: '2027-01-15' },
+  { id: '1', name: 'Paracetamol 500mg', category: 'Pain Relief', price: 25.00, stock: 150, image: '/logo.PNG', instructions: 'Every 4 hours, take with meals', expiryDate: '2026-06-15' },
+  { id: '2', name: 'Amoxicillin 250mg', category: 'Antibiotic', price: 85.00, stock: 80, image: '/logo.PNG', instructions: 'Every 8 hours, take with meals', expiryDate: '2026-05-20' },
+  { id: '3', name: 'Ibuprofen 400mg', category: 'Pain Relief', price: 35.00, stock: 120, image: '/logo.PNG', instructions: 'Every 6 hours, take after meals', expiryDate: '2026-12-01' },
+  { id: '4', name: 'Cetirizine 10mg', category: 'Allergy', price: 45.00, stock: 200, image: '/logo.PNG', instructions: 'Once daily, take at night', expiryDate: '2026-08-30' },
+  { id: '5', name: 'Metformin 500mg', category: 'Diabetes', price: 120.00, stock: 60, image: '/logo.PNG', instructions: 'Twice daily, take with meals', expiryDate: '2026-03-15' },
+  { id: '6', name: 'Omeprazole 20mg', category: 'Gastric', price: 65.00, stock: 90, image: '/logo.PNG', instructions: 'Once daily, before breakfast', expiryDate: '2026-11-20' },
+  { id: '7', name: 'Salbutamol Inhaler', category: 'Respiratory', price: 150.00, stock: 40, image: '/logo.PNG', instructions: 'When needed, max 2 puffs', expiryDate: '2026-04-01' },
+  { id: '8', name: 'Vitamin C 500mg', category: 'Supplements', price: 55.00, stock: 300, image: '/logo.PNG', instructions: 'Once daily, take with meals', expiryDate: '2027-01-15' },
 ];
 
 function getDaysUntilExpiry(expiryDate: string): number {
@@ -158,7 +158,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
             <Image
-              src="/logo.png"
+              src="/logo.PNG"
               alt="Logo"
               width={40}
               height={40}
