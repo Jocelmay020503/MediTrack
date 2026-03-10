@@ -175,7 +175,7 @@ export default function AdminSalesPage() {
         <button
           onClick={() => setFilterDate('all')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
-            filterDate === 'all' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+            filterDate === 'all' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
           All Time
@@ -183,7 +183,7 @@ export default function AdminSalesPage() {
         <button
           onClick={() => setFilterDate('today')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
-            filterDate === 'today' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+            filterDate === 'today' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
           Today
@@ -191,7 +191,7 @@ export default function AdminSalesPage() {
         <button
           onClick={() => setFilterDate('week')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
-            filterDate === 'week' ? 'bg-blue-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+            filterDate === 'week' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
           This Month
@@ -285,7 +285,7 @@ export default function AdminSalesPage() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => setSelectedSale(sale)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        className="text-slate-800 hover:text-slate-900 text-sm font-medium"
                       >
                         View
                       </button>

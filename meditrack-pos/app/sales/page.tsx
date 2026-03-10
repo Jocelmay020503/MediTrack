@@ -155,7 +155,7 @@ export default function SalesPage() {
             <Link href="/dashboard" className="text-white/70 hover:text-white font-medium transition">
               Medicines
             </Link>
-            <Link href="/sales" className="text-blue-400 font-medium border-b-2 border-blue-400 pb-1">
+            <Link href="/sales" className="text-white font-medium border-b-2 border-white pb-1">
               Sales
             </Link>
           </nav>
@@ -166,7 +166,7 @@ export default function SalesPage() {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 hover:bg-white/10 p-1 rounded-lg transition"
               >
-                <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-sm font-medium">
+                <div className="w-9 h-9 bg-slate-800 rounded-full flex items-center justify-center text-sm font-medium">
                   S
                 </div>
                 <span className="text-sm hidden md:block">Seller</span>
@@ -279,7 +279,7 @@ export default function SalesPage() {
                     <td className="px-4 py-3">
                       <button
                         onClick={() => setSelectedSale(sale)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        className="text-slate-800 hover:text-slate-900 text-sm font-medium"
                       >
                         View
                       </button>

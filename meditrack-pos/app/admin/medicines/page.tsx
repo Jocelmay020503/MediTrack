@@ -144,7 +144,7 @@ export default function AdminMedicinesPage() {
         </div>
         <button
           onClick={handleOpenAdd}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center gap-2"
+          className="bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 px-4 rounded-lg transition flex items-center gap-2"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -218,7 +218,7 @@ export default function AdminMedicinesPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleOpenStock(medicine)}
-                        className="p-1 text-blue-600 hover:bg-blue-50 rounded transition"
+                        className="p-1 text-slate-800 hover:bg-slate-100 rounded transition"
                         title="Add/Reduce Stock"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -284,7 +284,7 @@ export default function AdminMedicinesPage() {
                         name="stockAction"
                         checked={stockAction === 'add'}
                         onChange={() => setStockAction('add')}
-                        className="text-blue-600"
+                        className="text-slate-800"
                       />
                       <span className="text-sm">Add Stock</span>
                     </label>
@@ -294,7 +294,7 @@ export default function AdminMedicinesPage() {
                         name="stockAction"
                         checked={stockAction === 'reduce'}
                         onChange={() => setStockAction('reduce')}
-                        className="text-blue-600"
+                        className="text-slate-800"
                       />
                       <span className="text-sm">Reduce Stock</span>
                     </label>
@@ -326,7 +326,7 @@ export default function AdminMedicinesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                    className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 px-4 rounded-lg transition"
                   >
                     Confirm
                   </button>
@@ -417,7 +417,7 @@ export default function AdminMedicinesPage() {
                   </button>
                   <button
                     type="submit"
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                    className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 px-4 rounded-lg transition"
                   >
                     {modalType === 'add' ? 'Add Medicine' : 'Save Changes'}
                   </button>

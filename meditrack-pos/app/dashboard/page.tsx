@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '../utils/useAuth';
 
 interface Medicine {
   id: string;
@@ -36,6 +37,7 @@ function getDaysUntilExpiry(expiryDate: string): number {
 
 export default function Dashboard() {
   const router = useRouter();
+  const { user, loading, logout } = useAuth('seller');
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<{ medicine: Medicine; quantity: number }[]>([]);
   const [showCart, setShowCart] = useState(false);
@@ -59,9 +61,7 @@ export default function Dashboard() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    router.push('/login');
+    logout();
   };
 
   const filteredMedicines = medicines.filter(med =>
@@ -172,6 +172,17 @@ export default function Dashboard() {
     setShowCart(false);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg">
@@ -188,7 +199,7 @@ export default function Dashboard() {
           </div>
 
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/dashboard" className="text-blue-400 font-medium border-b-2 border-blue-400 pb-1">
+            <Link href="/dashboard" className="text-white font-medium border-b-2 border-white pb-1">
               Medicines
             </Link>
             <Link href="/sales" className="text-white/70 hover:text-white font-medium transition">
@@ -240,7 +251,7 @@ export default function Dashboard() {
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 hover:bg-white/10 p-1 rounded-lg transition"
               >
-                <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-sm font-medium">
+                <div className="w-9 h-9 bg-slate-800 rounded-full flex items-center justify-center text-sm font-medium">
                   S
                 </div>
                 <span className="text-sm hidden md:block">Seller</span>
@@ -447,7 +458,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleConfirm}
                   disabled={!canCheckout}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white font-medium py-3 rounded-lg transition"
+                  className="w-full bg-slate-800 hover:bg-slate-900 disabled:bg-slate-300 text-white font-medium py-3 rounded-lg transition"
                 >
                   Confirm & Print Receipt
                 </button>
@@ -504,7 +515,7 @@ export default function Dashboard() {
             <div className="flex gap-3">
               <button
                 onClick={handlePrint}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
+                className="flex-1 bg-slate-800 hover:bg-slate-900 text-white font-medium py-2 px-4 rounded-lg transition flex items-center justify-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />

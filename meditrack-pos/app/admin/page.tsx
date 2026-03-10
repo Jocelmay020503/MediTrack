@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useAuth } from '../utils/useAuth';
 
 interface Medicine {
   id: string;
@@ -35,6 +36,7 @@ function getDaysUntilExpiry(expiryDate: string): number {
 }
 
 export default function AdminDashboard() {
+  const { user, loading, logout } = useAuth('admin');
   const [selectedTab, setSelectedTab] = useState<'overview' | 'expiring'>('overview');
 
   const totalProducts = medicines.length;
@@ -61,6 +63,17 @@ export default function AdminDashboard() {
     totalStock: medicines.filter(med => med.category === cat).reduce((sum, med) => sum + med.stock, 0)
   }));
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-6">
@@ -73,7 +86,7 @@ export default function AdminDashboard() {
           onClick={() => setSelectedTab('overview')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
             selectedTab === 'overview' 
-              ? 'bg-blue-600 text-white' 
+              ? 'bg-slate-800 text-white' 
               : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -83,7 +96,7 @@ export default function AdminDashboard() {
           onClick={() => setSelectedTab('expiring')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
             selectedTab === 'expiring' 
-              ? 'bg-blue-600 text-white' 
+              ? 'bg-slate-800 text-white' 
               : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
