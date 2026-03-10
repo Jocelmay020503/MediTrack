@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface Medicine {
   id: string;
@@ -34,6 +35,7 @@ function getDaysUntilExpiry(expiryDate: string): number {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<{ medicine: Medicine; quantity: number }[]>([]);
   const [showCart, setShowCart] = useState(false);
@@ -43,6 +45,24 @@ export default function Dashboard() {
   const [showReceipt, setShowReceipt] = useState(false);
   const [animatingId, setAnimatingId] = useState<string | null>(null);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setShowUserMenu(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('user');
+    router.push('/login');
+  };
 
   const filteredMedicines = medicines.filter(med =>
     med.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -171,6 +191,12 @@ export default function Dashboard() {
             <Link href="/dashboard" className="text-blue-400 font-medium border-b-2 border-blue-400 pb-1">
               Medicines
             </Link>
+            <Link href="/sales" className="text-white/70 hover:text-white font-medium transition">
+              Sales
+            </Link>
+            <button onClick={handleLogout} className="text-white/70 hover:text-red-400 font-medium transition">
+              Log Out
+            </button>
           </nav>
 
           <div className="flex items-center gap-4">
@@ -212,11 +238,33 @@ export default function Dashboard() {
               )}
             </button>
 
-            <div className="flex items-center gap-2 ml-2">
-              <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-sm font-medium">
-                S
-              </div>
-              <span className="text-sm hidden md:block">Seller</span>
+            <div className="flex items-center gap-2 ml-2 relative" ref={userMenuRef}>
+              <button 
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 hover:bg-white/10 p-1 rounded-lg transition"
+              >
+                <div className="w-9 h-9 bg-blue-500 rounded-full flex items-center justify-center text-sm font-medium">
+                  S
+                </div>
+                <span className="text-sm hidden md:block">Seller</span>
+                <svg className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+
+              {showUserMenu && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Log Out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
