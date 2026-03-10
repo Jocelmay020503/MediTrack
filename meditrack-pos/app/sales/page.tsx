@@ -158,9 +158,6 @@ export default function SalesPage() {
             <Link href="/sales" className="text-blue-400 font-medium border-b-2 border-blue-400 pb-1">
               Sales
             </Link>
-            <button onClick={handleLogout} className="text-white/70 hover:text-red-400 font-medium transition">
-              Log Out
-            </button>
           </nav>
 
           <div className="flex items-center gap-4">

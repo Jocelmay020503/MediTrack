@@ -194,9 +194,6 @@ export default function Dashboard() {
             <Link href="/sales" className="text-white/70 hover:text-white font-medium transition">
               Sales
             </Link>
-            <button onClick={handleLogout} className="text-white/70 hover:text-red-400 font-medium transition">
-              Log Out
-            </button>
           </nav>
 
           <div className="flex items-center gap-4">
