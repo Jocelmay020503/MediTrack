@@ -33,7 +33,8 @@ export default function LoginPage() {
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
       
-      if (data.user.role === 'Admin') {
+      const userRole = data.user.role?.toLowerCase() || '';
+      if (userRole === 'admin' || userRole === 'Admin') {
         router.push('/admin');
       } else {
         router.push('/dashboard');
