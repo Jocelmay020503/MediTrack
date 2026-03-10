@@ -32,7 +32,12 @@ export default function LoginPage() {
 
       localStorage.setItem('authToken', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      router.push('/dashboard');
+      
+      if (data.user.role === 'Admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError('An error occurred. Please try again.');
     } finally {
@@ -130,9 +135,13 @@ export default function LoginPage() {
 
           <div className="mt-8 pt-6 border-t border-slate-200">
             <p className="text-xs text-slate-500 text-center mb-2">Demo Credentials</p>
-            <div className="flex justify-center gap-4 text-xs text-slate-600">
-              <span><span className="font-medium">Admin:</span> admin / password123</span>
-              <span><span className="font-medium">Seller:</span> seller / password123</span>
+            <div className="space-y-2 text-xs text-slate-600">
+              <div className="flex justify-center gap-2">
+                <span><span className="font-medium">Admin:</span> admin / password123</span>
+              </div>
+              <div className="flex justify-center gap-2">
+                <span><span className="font-medium">Seller:</span> seller / password123</span>
+              </div>
             </div>
           </div>
         </div>
