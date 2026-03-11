@@ -113,49 +113,53 @@ export default function SalesPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-4 sm:px-6 h-16">
+          {/* Logo + Brand */}
+          <div className="flex items-center gap-3 min-w-0">
             <Image
               src="/logo.PNG"
               alt="Logo"
-              width={40}
-              height={40}
-              className="rounded-lg object-contain"
+              width={36}
+              height={36}
+              className="rounded-lg object-contain shrink-0"
             />
-            <span className="text-xl font-bold">MediTrack</span>
+            <span className="text-lg font-bold truncate">MediTrack</span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8">
-            <Link href="/dashboard" className="text-white/70 hover:text-white font-medium transition">
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex items-center gap-6 mx-6">
+            <Link href="/dashboard" className="text-white/70 hover:text-white font-medium transition text-sm">
               Medicines
             </Link>
-            <Link href="/sales" className="text-white font-medium border-b-2 border-white pb-1">
+            <Link href="/sales" className="text-white font-medium border-b-2 border-white pb-0.5 text-sm">
               Sales
             </Link>
           </nav>
 
-          <div className="ml-auto flex items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 ml-2 relative" ref={userMenuRef}>
+          {/* Right actions */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* User menu */}
+            <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 hover:bg-white/10 p-1 rounded-lg transition"
+                className="flex items-center gap-2 hover:bg-white/10 px-2 py-1.5 rounded-lg transition"
               >
-                <div className="w-9 h-9 bg-slate-800 rounded-full flex items-center justify-center text-sm font-medium">
+                <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center text-sm font-semibold shrink-0">
                   S
                 </div>
-                <span className="text-sm hidden md:block">Seller</span>
-                <svg className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="text-sm hidden sm:block">Seller</span>
+                <svg className={`w-4 h-4 transition-transform shrink-0 ${showUserMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+                <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
                   <button
                     onClick={logout}
                     className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                     Log Out
@@ -166,11 +170,12 @@ export default function SalesPage() {
           </div>
         </div>
 
-        <nav className="md:hidden px-4 pb-3 flex items-center gap-2">
-          <Link href="/dashboard" className="touch-target px-3 py-1.5 rounded-md bg-white/10 text-white text-sm font-semibold">
+        {/* Mobile nav row */}
+        <nav className="md:hidden px-4 pb-2 flex items-center gap-2">
+          <Link href="/dashboard" className="px-3 py-1.5 rounded-md bg-white/10 text-white text-sm font-semibold">
             Medicines
           </Link>
-          <Link href="/sales" className="touch-target px-3 py-1.5 rounded-md bg-white text-slate-900 text-sm font-semibold">
+          <Link href="/sales" className="px-3 py-1.5 rounded-md bg-white text-slate-900 text-sm font-semibold">
             Sales
           </Link>
         </nav>
