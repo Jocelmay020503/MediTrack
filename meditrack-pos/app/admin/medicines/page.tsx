@@ -248,7 +248,7 @@ export default function AdminMedicinesPage() {
 
                   <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2 text-sm">
                     <p className="text-slate-600">Price: ₱{medicine.price.toFixed(2)}</p>
-                    <p className="text-slate-600">Stock: {medicine.stock} units</p>
+                    <p className="text-slate-600">Stock: {medicine.stock} pcs</p>
                     <p className="text-slate-600 col-span-2">Expiry: {medicine.expiryDate}</p>
                   </div>
 
@@ -317,7 +317,7 @@ export default function AdminMedicinesPage() {
                           medicine.stock > 50 ? 'text-green-600' :
                           medicine.stock > 20 ? 'text-yellow-600' : 'text-red-600'
                         }`}>
-                          {medicine.stock} units
+                          {medicine.stock} pcs
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-600">{medicine.expiryDate}</td>
@@ -388,7 +388,7 @@ export default function AdminMedicinesPage() {
 
                 <div className="mb-4">
                   <p className="font-medium text-slate-800 mb-1">{selectedMedicine?.name}</p>
-                  <p className="text-sm text-slate-500">Current Stock: {selectedMedicine?.stock} units</p>
+                  <p className="text-sm text-slate-500">Current Stock: {selectedMedicine?.stock} pcs</p>
                 </div>
 
                 <div className="mb-4">

@@ -395,7 +395,7 @@ export default function Dashboard() {
                           : 'bg-red-100 text-red-700'
                     }`}
                   >
-                    Stock: {medicine.stock}
+                    Stock: {medicine.stock} pcs
                   </span>
                 </div>
 

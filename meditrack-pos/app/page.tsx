@@ -171,7 +171,7 @@ export default function LandingPage() {
                         <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                           <div>
                             <p className="text-base font-bold text-slate-900">{med.name}</p>
-                            <p className="text-sm font-semibold text-slate-700 mt-1">{med.stock} in stock</p>
+                            <p className="text-sm font-semibold text-slate-700 mt-1">{med.stock} pcs in stock</p>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="text-base font-bold text-slate-900">{med.price}</span>

@@ -313,7 +313,7 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-red-600">{med.stock} units</p>
+                      <p className="font-bold text-red-600">{med.stock} pcs</p>
                       <p className="text-xs text-slate-500">₱{med.price.toFixed(2)} each</p>
                     </div>
                   </div>
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
                     <span className="font-medium text-slate-800">{cat.name}</span>
                     <div className="text-right">
                       <p className="font-semibold text-slate-700">{cat.count} products</p>
-                      <p className="text-xs text-slate-500">{cat.totalStock} units in stock</p>
+                      <p className="text-xs text-slate-500">{cat.totalStock} pcs in stock</p>
                     </div>
                   </div>
                 ))}
