@@ -34,60 +34,66 @@ const defaultMedicines = [
 ];
 
 async function ensureDemoData() {
-  const existingAdmin = await prisma.user.findUnique({
-    where: { username: 'demoadmin' },
-    include: { store: true },
-  });
-
   const passwordHash = await bcrypt.hash('password123', 10);
 
-  let storeId;
+  const existingAdmin = await prisma.user.findUnique({
+    where: { username: 'demoadmin' },
+    select: { storeId: true },
+  });
 
-  if (!existingAdmin) {
-    const store = await prisma.store.create({
-      data: { name: 'Demo Pharmacy' },
+  let storeId = existingAdmin?.storeId;
+
+  if (!storeId) {
+    const existingDemoStore = await prisma.store.findFirst({
+      where: { name: 'Demo Pharmacy' },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true },
     });
 
-    storeId = store.id;
-
-    await prisma.user.create({
-      data: {
-        username: 'demoadmin',
-        email: 'demoadmin@meditrack.local',
-        passwordHash,
-        role: 'ADMIN',
-        storeId,
-      },
-    });
-
-    await prisma.user.create({
-      data: {
-        username: 'demoseller',
-        email: 'demoseller@meditrack.local',
-        passwordHash,
-        role: 'SELLER',
-        storeId,
-      },
-    });
-  } else {
-    storeId = existingAdmin.storeId;
-
-    const seller = await prisma.user.findFirst({
-      where: { storeId, role: 'SELLER', username: 'demoseller' },
-    });
-
-    if (!seller) {
-      await prisma.user.create({
-        data: {
-          username: 'demoseller',
-          email: 'demoseller@meditrack.local',
-          passwordHash,
-          role: 'SELLER',
-          storeId,
-        },
+    if (existingDemoStore) {
+      storeId = existingDemoStore.id;
+    } else {
+      const store = await prisma.store.create({
+        data: { name: 'Demo Pharmacy' },
+        select: { id: true },
       });
+      storeId = store.id;
     }
   }
+
+  await prisma.user.upsert({
+    where: { username: 'demoadmin' },
+    update: {
+      email: 'demoadmin@meditrack.local',
+      passwordHash,
+      role: 'ADMIN',
+      storeId,
+    },
+    create: {
+      username: 'demoadmin',
+      email: 'demoadmin@meditrack.local',
+      passwordHash,
+      role: 'ADMIN',
+      storeId,
+    },
+  });
+
+  await prisma.user.upsert({
+    where: { username: 'demoseller' },
+    update: {
+      email: 'demoseller@meditrack.local',
+      passwordHash,
+      role: 'SELLER',
+      storeId,
+    },
+    create: {
+      username: 'demoseller',
+      email: 'demoseller@meditrack.local',
+      passwordHash,
+      role: 'SELLER',
+      storeId,
+    },
+  });
 
   const medicineCount = await prisma.medicine.count({ where: { storeId } });
   if (medicineCount === 0) {
@@ -99,7 +105,7 @@ async function ensureDemoData() {
     });
   }
 
-  console.log('Demo seeded: demoadmin/password123 and demoseller/password123');
+  console.log('Demo users synced: demoadmin/password123 and demoseller/password123');
 }
 
 ensureDemoData()
