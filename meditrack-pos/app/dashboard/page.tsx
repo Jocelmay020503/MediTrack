@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../utils/useAuth';
+import { apiFetch } from '@/app/utils/apiClient';
 
 interface Medicine {
   id: string;
@@ -17,38 +17,56 @@ interface Medicine {
   expiryDate: string;
 }
 
-const medicines: Medicine[] = [
-  { id: '1', name: 'Paracetamol 500mg', category: 'Pain Relief', price: 25.00, stock: 150, image: '/logo.PNG', instructions: 'Every 4 hours, take with meals', expiryDate: '2026-06-15' },
-  { id: '2', name: 'Amoxicillin 250mg', category: 'Antibiotic', price: 85.00, stock: 80, image: '/logo.PNG', instructions: 'Every 8 hours, take with meals', expiryDate: '2026-05-20' },
-  { id: '3', name: 'Ibuprofen 400mg', category: 'Pain Relief', price: 35.00, stock: 120, image: '/logo.PNG', instructions: 'Every 6 hours, take after meals', expiryDate: '2026-12-01' },
-  { id: '4', name: 'Cetirizine 10mg', category: 'Allergy', price: 45.00, stock: 200, image: '/logo.PNG', instructions: 'Once daily, take at night', expiryDate: '2026-08-30' },
-  { id: '5', name: 'Metformin 500mg', category: 'Diabetes', price: 120.00, stock: 60, image: '/logo.PNG', instructions: 'Twice daily, take with meals', expiryDate: '2026-03-15' },
-  { id: '6', name: 'Omeprazole 20mg', category: 'Gastric', price: 65.00, stock: 90, image: '/logo.PNG', instructions: 'Once daily, before breakfast', expiryDate: '2026-11-20' },
-  { id: '7', name: 'Salbutamol Inhaler', category: 'Respiratory', price: 150.00, stock: 40, image: '/logo.PNG', instructions: 'When needed, max 2 puffs', expiryDate: '2026-04-01' },
-  { id: '8', name: 'Vitamin C 500mg', category: 'Supplements', price: 55.00, stock: 300, image: '/logo.PNG', instructions: 'Once daily, take with meals', expiryDate: '2027-01-15' },
-];
+interface SaleResponse {
+  message: string;
+  sale: {
+    id: string;
+  };
+}
 
 function getDaysUntilExpiry(expiryDate: string): number {
-  const today = new Date('2026-03-09');
+  const today = new Date();
   const expiry = new Date(expiryDate);
   const diff = expiry.getTime() - today.getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
 export default function Dashboard() {
-  const router = useRouter();
-  const { user, loading, logout } = useAuth('seller');
+  const { loading, logout } = useAuth('seller');
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [loadingMedicines, setLoadingMedicines] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [cart, setCart] = useState<{ medicine: Medicine; quantity: number }[]>([]);
   const [showCart, setShowCart] = useState(false);
-  const [notification, setNotification] = useState(3);
+  const [notification, setNotification] = useState(0);
   const [cash, setCash] = useState('');
   const [deduction, setDeduction] = useState('');
   const [showReceipt, setShowReceipt] = useState(false);
   const [animatingId, setAnimatingId] = useState<string | null>(null);
-  const [orderComplete, setOrderComplete] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  const loadMedicines = async () => {
+    setLoadingMedicines(true);
+
+    try {
+      const data = await apiFetch<{ medicines: Medicine[] }>('/api/medicines');
+      setMedicines(data.medicines);
+      const lowStockCount = data.medicines.filter((m) => m.stock <= 10).length;
+      setNotification(lowStockCount);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load medicines';
+      setError(message);
+    } finally {
+      setLoadingMedicines(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMedicines();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -64,49 +82,78 @@ export default function Dashboard() {
     logout();
   };
 
-  const filteredMedicines = medicines.filter(med =>
-    med.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    med.category.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMedicines = medicines.filter(
+    (med) => med.name.toLowerCase().includes(searchQuery.toLowerCase()) || med.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const addToOrder = (medicine: Medicine) => {
     setAnimatingId(medicine.id);
     setTimeout(() => setAnimatingId(null), 500);
 
-    const existing = cart.find(item => item.medicine.id === medicine.id);
+    const existing = cart.find((item) => item.medicine.id === medicine.id);
     if (existing) {
-      setCart(cart.map(item =>
-        item.medicine.id === medicine.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
+      setCart(
+        cart.map((item) =>
+          item.medicine.id === medicine.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
     } else {
       setCart([...cart, { medicine, quantity: 1 }]);
     }
   };
 
   const removeFromCart = (id: string) => {
-    setCart(cart.filter(item => item.medicine.id !== id));
+    setCart(cart.filter((item) => item.medicine.id !== id));
   };
 
   const updateQuantity = (id: string, qty: number) => {
     if (qty < 1) return;
-    setCart(cart.map(item =>
-      item.medicine.id === id ? { ...item, quantity: qty } : item
-    ));
+    setCart(
+      cart.map((item) =>
+        item.medicine.id === id ? { ...item, quantity: qty } : item
+      )
+    );
   };
 
-  const cartTotal = cart.reduce((sum, item) => sum + (item.medicine.price * item.quantity), 0);
+  const cartTotal = cart.reduce((sum, item) => sum + item.medicine.price * item.quantity, 0);
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const deductionAmount = parseFloat(deduction) || 0;
-  const finalTotal = cartTotal - deductionAmount;
+  const deductionAmount = Math.max(0, parseFloat(deduction) || 0);
+  const finalTotal = Math.max(0, cartTotal - deductionAmount);
   const cashAmount = parseFloat(cash) || 0;
   const change = cashAmount - finalTotal;
   const canCheckout = cashAmount >= finalTotal && cart.length > 0;
 
-  const handleConfirm = () => {
-    if (canCheckout) {
+  const handleConfirm = async () => {
+    if (!canCheckout) {
+      return;
+    }
+
+    setError('');
+    setSuccess('');
+
+    try {
+      const payload = {
+        items: cart.map((item) => ({
+          medicineId: item.medicine.id,
+          quantity: item.quantity,
+        })),
+        discount: deductionAmount,
+        cash: cashAmount,
+      };
+
+      await apiFetch<SaleResponse>('/api/sales', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      await loadMedicines();
       setShowReceipt(true);
+      setSuccess('Order confirmed successfully.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to confirm order';
+      setError(message);
     }
   };
 
@@ -136,19 +183,23 @@ export default function Dashboard() {
             <p>Date: ${new Date().toLocaleString()}</p>
           </div>
           <div class="items">
-            ${cart.map(item => `
+            ${cart
+              .map(
+                (item) => `
               <div class="item">
                 <span>${item.medicine.name} x${item.quantity}</span>
-                <span>₱${(item.medicine.price * item.quantity).toFixed(2)}</span>
+                <span>PHP ${(item.medicine.price * item.quantity).toFixed(2)}</span>
               </div>
-            `).join('')}
+            `
+              )
+              .join('')}
           </div>
           <div class="total">
-            <div>Subtotal: ₱${cartTotal.toFixed(2)}</div>
-            ${deductionAmount > 0 ? `<div>Discount: -₱${deductionAmount.toFixed(2)}</div>` : ''}
-            <div>Total: ₱${finalTotal.toFixed(2)}</div>
-            <div class="change">Cash: ₱${cashAmount.toFixed(2)}</div>
-            <div class="change">Change: ₱${change.toFixed(2)}</div>
+            <div>Subtotal: PHP ${cartTotal.toFixed(2)}</div>
+            ${deductionAmount > 0 ? `<div>Discount: -PHP ${deductionAmount.toFixed(2)}</div>` : ''}
+            <div>Total: PHP ${finalTotal.toFixed(2)}</div>
+            <div class="change">Cash: PHP ${cashAmount.toFixed(2)}</div>
+            <div class="change">Change: PHP ${change.toFixed(2)}</div>
           </div>
           <div class="footer">
             <p>Thank you for your purchase!</p>
@@ -168,11 +219,11 @@ export default function Dashboard() {
     setCash('');
     setDeduction('');
     setShowReceipt(false);
-    setOrderComplete(false);
     setShowCart(false);
+    setError('');
   };
 
-  if (loading) {
+  if (loading || loadingMedicines) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
@@ -186,7 +237,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg">
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3">
             <Image
               src="/logo.PNG"
@@ -195,10 +246,10 @@ export default function Dashboard() {
               height={40}
               className="rounded-lg object-contain"
             />
-            <span className="text-xl font-bold">MediTrack</span>
+            <span className="text-lg sm:text-xl font-bold">MediTrack</span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-5 lg:gap-8">
             <Link href="/dashboard" className="text-white font-medium border-b-2 border-white pb-1">
               Medicines
             </Link>
@@ -207,20 +258,20 @@ export default function Dashboard() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search medicines..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 pl-10 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 w-48 md:w-64"
-              />
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
+          <div className="relative order-3 basis-full sm:order-none sm:basis-auto">
+            <input
+              type="text"
+              placeholder="Search medicines..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-white/10 border border-white/20 rounded-lg px-4 py-2 pl-10 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 w-full sm:w-52 md:w-52 lg:w-64"
+            />
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
 
+          <div className="ml-auto flex items-center gap-2 sm:gap-4">
             <button className="relative p-2 hover:bg-white/10 rounded-lg transition">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
@@ -232,7 +283,7 @@ export default function Dashboard() {
               )}
             </button>
 
-            <button 
+            <button
               onClick={() => setShowCart(!showCart)}
               className="relative p-2 hover:bg-white/10 rounded-lg transition"
             >
@@ -246,8 +297,8 @@ export default function Dashboard() {
               )}
             </button>
 
-            <div className="flex items-center gap-2 ml-2 relative" ref={userMenuRef}>
-              <button 
+            <div className="flex items-center gap-2 ml-1 sm:ml-2 relative" ref={userMenuRef}>
+              <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 hover:bg-white/10 p-1 rounded-lg transition"
               >
@@ -276,15 +327,36 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        <nav className="md:hidden px-4 pb-3 flex items-center gap-2">
+          <Link href="/dashboard" className="touch-target px-3 py-1.5 rounded-md bg-white text-slate-900 text-sm font-semibold">
+            Medicines
+          </Link>
+          <Link href="/sales" className="touch-target px-3 py-1.5 rounded-md bg-white/10 text-white text-sm font-semibold">
+            Sales
+          </Link>
+        </nav>
       </header>
 
-      <main className="flex-1 bg-slate-50 p-6">
+      <main className="flex-1 bg-slate-50 p-4 sm:p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Medicines</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Medicines</h1>
           <p className="text-slate-500">Browse and add medicines to order</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+            {success}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {filteredMedicines.map((medicine) => {
             const daysUntilExpiry = getDaysUntilExpiry(medicine.expiryDate);
             const isExpiringSoon = daysUntilExpiry <= 7;
@@ -295,7 +367,7 @@ export default function Dashboard() {
                 key={medicine.id}
                 className={`bg-white rounded-xl shadow-md hover:shadow-lg transition p-4 border border-slate-100 ${isAnimating ? 'scale-105 ring-2 ring-blue-500' : ''}`}
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-3 gap-2">
                   <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
                     <Image
                       src={medicine.image}
@@ -311,10 +383,18 @@ export default function Dashboard() {
                 </div>
 
                 <h3 className="font-semibold text-slate-800 mb-1">{medicine.name}</h3>
-                
-                <div className="flex items-center justify-between mb-2">
+
+                <div className="flex items-center justify-between mb-2 gap-2">
                   <span className="text-lg font-bold text-slate-800">₱{medicine.price.toFixed(2)}</span>
-                  <span className={`text-xs px-2 py-1 rounded-full ${medicine.stock > 50 ? 'bg-green-100 text-green-700' : medicine.stock > 20 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      medicine.stock > 50
+                        ? 'bg-green-100 text-green-700'
+                        : medicine.stock > 20
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : 'bg-red-100 text-red-700'
+                    }`}
+                  >
                     Stock: {medicine.stock}
                   </span>
                 </div>
@@ -323,7 +403,7 @@ export default function Dashboard() {
 
                 {isExpiringSoon && (
                   <p className="text-xs text-red-600 font-medium mb-3">
-                    ⚠️ Expires in {daysUntilExpiry} days - Notify customer!
+                    Expires in {daysUntilExpiry} days - Notify customer.
                   </p>
                 )}
 
@@ -379,9 +459,7 @@ export default function Dashboard() {
                         <div className="flex-1">
                           <h4 className="font-medium text-slate-800 text-sm">{item.medicine.name}</h4>
                           <p className="text-blue-600 font-semibold">₱{item.medicine.price.toFixed(2)}</p>
-                          {isExpiringSoon && (
-                            <p className="text-xs text-red-600">⚠️ Expiring soon!</p>
-                          )}
+                          {isExpiringSoon && <p className="text-xs text-red-600">Expiring soon</p>}
                         </div>
                         <div className="flex flex-col items-end justify-between">
                           <button
@@ -470,7 +548,7 @@ export default function Dashboard() {
 
       {showReceipt && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6">
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto p-5 sm:p-6">
             <div className="text-center mb-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

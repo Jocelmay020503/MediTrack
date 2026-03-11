@@ -13,6 +13,7 @@ export default function AdminLayout({
   const router = useRouter();
   const currentPath = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -26,10 +27,37 @@ export default function AdminLayout({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
+  useEffect(() => {
+    setMobileSidebarOpen(false);
+  }, [currentPath]);
+
+  const handleLogout = async () => {
+    const token = localStorage.getItem('authToken');
+
+    try {
+      if (token) {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch {
+      // Ignore logout API failures and clear local state anyway.
+    }
+
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     router.push('/login');
+  };
+
+  const handleSidebarToggle = () => {
+    if (window.innerWidth < 768) {
+      setMobileSidebarOpen((prev) => !prev);
+      return;
+    }
+    setSidebarOpen((prev) => !prev);
   };
 
   const menuItems = [
@@ -41,7 +69,16 @@ export default function AdminLayout({
 
   return (
     <div className="min-h-screen flex">
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gradient-to-b from-slate-800 to-slate-900 text-white transition-all duration-300 fixed h-full z-40`}>
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          aria-label="Close sidebar"
+          onClick={() => setMobileSidebarOpen(false)}
+          className="fixed inset-0 bg-black/40 z-30 md:hidden"
+        />
+      )}
+
+      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-gradient-to-b from-slate-800 to-slate-900 text-white transition-all duration-300 fixed inset-y-0 left-0 z-40 transform ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="flex items-center justify-between p-4 border-b border-slate-700">
           {sidebarOpen && (
             <div className="flex items-center gap-3">
@@ -56,7 +93,7 @@ export default function AdminLayout({
             </div>
           )}
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            onClick={handleSidebarToggle}
             className="p-2 hover:bg-white/10 rounded-lg transition"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -75,6 +112,7 @@ export default function AdminLayout({
               <Link
                 key={item.href}
                 href={item.href}
+                onClick={() => setMobileSidebarOpen(false)}
                 className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                   isActive 
                     ? 'bg-white text-slate-800' 
@@ -93,6 +131,7 @@ export default function AdminLayout({
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700">
           <Link
             href="/dashboard"
+            onClick={() => setMobileSidebarOpen(false)}
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-white/10 transition"
           >
             <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,11 +142,21 @@ export default function AdminLayout({
         </div>
       </aside>
 
-      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-20'}`}>
+      <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
         <header className="bg-white shadow-md border-b">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div>
-              <h1 className="text-xl font-bold text-slate-800">Admin Dashboard</h1>
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setMobileSidebarOpen(true)}
+                className="md:hidden p-2 rounded-lg hover:bg-slate-100 text-slate-700"
+                aria-label="Open sidebar"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              <h1 className="text-lg sm:text-xl font-bold text-slate-800">Admin Dashboard</h1>
             </div>
 
             <div className="flex items-center gap-4">
@@ -119,7 +168,7 @@ export default function AdminLayout({
                   <div className="w-9 h-9 bg-slate-800 rounded-full flex items-center justify-center text-sm font-medium text-white">
                     A
                   </div>
-                  <span className="text-sm font-medium text-slate-800">Admin</span>
+                  <span className="text-sm font-medium text-slate-800 hidden sm:block">Admin</span>
                   <svg className={`w-4 h-4 text-slate-500 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
@@ -143,7 +192,7 @@ export default function AdminLayout({
           </div>
         </header>
 
-        <main className="p-6 bg-slate-50 min-h-[calc(100vh-73px)]">
+        <main className="p-4 sm:p-6 bg-slate-50 min-h-[calc(100vh-73px)]">
           {children}
         </main>
       </div>

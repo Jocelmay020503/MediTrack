@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/app/utils/useAuth';
+import { apiFetch } from '@/app/utils/apiClient';
 
 interface SaleItem {
   id: string;
@@ -22,137 +24,68 @@ interface Sale {
   seller: string;
 }
 
-const mockSales: Sale[] = [
-  {
-    id: '1',
-    date: '2026-03-10 09:30:00',
-    items: [
-      { id: '1', name: 'Paracetamol 500mg', quantity: 2, price: 25.00, total: 50.00 },
-      { id: '3', name: 'Ibuprofen 400mg', quantity: 1, price: 35.00, total: 35.00 },
-    ],
-    subtotal: 85.00,
-    discount: 0,
-    total: 85.00,
-    cash: 100.00,
-    change: 15.00,
-    seller: 'Seller 1',
-  },
-  {
-    id: '2',
-    date: '2026-03-10 10:15:00',
-    items: [
-      { id: '4', name: 'Cetirizine 10mg', quantity: 3, price: 45.00, total: 135.00 },
-    ],
-    subtotal: 135.00,
-    discount: 10.00,
-    total: 125.00,
-    cash: 125.00,
-    change: 0,
-    seller: 'Seller 1',
-  },
-  {
-    id: '3',
-    date: '2026-03-10 11:45:00',
-    items: [
-      { id: '2', name: 'Amoxicillin 250mg', quantity: 1, price: 85.00, total: 85.00 },
-      { id: '6', name: 'Omeprazole 20mg', quantity: 2, price: 65.00, total: 130.00 },
-    ],
-    subtotal: 215.00,
-    discount: 15.00,
-    total: 200.00,
-    cash: 250.00,
-    change: 50.00,
-    seller: 'Seller 2',
-  },
-  {
-    id: '4',
-    date: '2026-03-09 14:20:00',
-    items: [
-      { id: '8', name: 'Vitamin C 500mg', quantity: 5, price: 55.00, total: 275.00 },
-    ],
-    subtotal: 275.00,
-    discount: 25.00,
-    total: 250.00,
-    cash: 300.00,
-    change: 50.00,
-    seller: 'Seller 1',
-  },
-  {
-    id: '5',
-    date: '2026-03-09 16:00:00',
-    items: [
-      { id: '7', name: 'Salbutamol Inhaler', quantity: 1, price: 150.00, total: 150.00 },
-      { id: '5', name: 'Metformin 500mg', quantity: 2, price: 120.00, total: 240.00 },
-    ],
-    subtotal: 390.00,
-    discount: 0,
-    total: 390.00,
-    cash: 400.00,
-    change: 10.00,
-    seller: 'Seller 2',
-  },
-  {
-    id: '6',
-    date: '2026-03-08 09:00:00',
-    items: [
-      { id: '1', name: 'Paracetamol 500mg', quantity: 10, price: 25.00, total: 250.00 },
-      { id: '3', name: 'Ibuprofen 400mg', quantity: 5, price: 35.00, total: 175.00 },
-      { id: '4', name: 'Cetirizine 10mg', quantity: 2, price: 45.00, total: 90.00 },
-    ],
-    subtotal: 515.00,
-    discount: 50.00,
-    total: 465.00,
-    cash: 500.00,
-    change: 35.00,
-    seller: 'Seller 1',
-  },
-  {
-    id: '7',
-    date: '2026-03-08 11:30:00',
-    items: [
-      { id: '6', name: 'Omeprazole 20mg', quantity: 3, price: 65.00, total: 195.00 },
-    ],
-    subtotal: 195.00,
-    discount: 0,
-    total: 195.00,
-    cash: 200.00,
-    change: 5.00,
-    seller: 'Seller 2',
-  },
-  {
-    id: '8',
-    date: '2026-03-07 15:00:00',
-    items: [
-      { id: '2', name: 'Amoxicillin 250mg', quantity: 2, price: 85.00, total: 170.00 },
-      { id: '8', name: 'Vitamin C 500mg', quantity: 4, price: 55.00, total: 220.00 },
-    ],
-    subtotal: 390.00,
-    discount: 20.00,
-    total: 370.00,
-    cash: 400.00,
-    change: 30.00,
-    seller: 'Seller 1',
-  },
-];
+interface SalesResponse {
+  sales: Sale[];
+}
+
+type DateFilter = 'all' | 'today' | '7days' | '30days';
+
+function parseSaleDate(value: string) {
+  return new Date(value.replace(' ', 'T'));
+}
+
+function isWithinFilter(date: Date, filter: DateFilter) {
+  if (filter === 'all') {
+    return true;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const saleDay = new Date(date);
+  saleDay.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.floor((today.getTime() - saleDay.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (filter === 'today') return diffDays === 0;
+  if (filter === '7days') return diffDays >= 0 && diffDays <= 6;
+  return diffDays >= 0 && diffDays <= 29;
+}
 
 export default function AdminSalesPage() {
+  const { loading } = useAuth('admin');
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
-  const [filterDate, setFilterDate] = useState<'all' | 'today' | 'week'>('all');
+  const [filterDate, setFilterDate] = useState<DateFilter>('all');
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loadingSales, setLoadingSales] = useState(true);
+  const [error, setError] = useState('');
 
-  const filteredSales = mockSales.filter(sale => {
-    if (filterDate === 'today') {
-      return sale.date.startsWith('2026-03-10');
+  const loadSales = async () => {
+    setLoadingSales(true);
+    setError('');
+
+    try {
+      const data = await apiFetch<SalesResponse>('/api/sales');
+      setSales(data.sales);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load sales';
+      setError(message);
+    } finally {
+      setLoadingSales(false);
     }
-    if (filterDate === 'week') {
-      return sale.date.startsWith('2026-03');
-    }
-    return true;
-  });
+  };
+
+  useEffect(() => {
+    loadSales();
+  }, []);
+
+  const filteredSales = sales.filter((sale) => isWithinFilter(parseSaleDate(sale.date), filterDate));
 
   const totalSales = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
   const totalTransactions = filteredSales.length;
-  const totalItemsSold = filteredSales.reduce((sum, sale) => 
-    sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
+  const totalItemsSold = filteredSales.reduce(
+    (sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
+    0
   );
   const totalDiscount = filteredSales.reduce((sum, sale) => sum + sale.discount, 0);
 
@@ -164,14 +97,25 @@ export default function AdminSalesPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  if (loading || loadingSales) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Sales Report</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Sales Report</h1>
         <p className="text-slate-500">View total sales and transaction history</p>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         <button
           onClick={() => setFilterDate('all')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
@@ -189,17 +133,31 @@ export default function AdminSalesPage() {
           Today
         </button>
         <button
-          onClick={() => setFilterDate('week')}
+          onClick={() => setFilterDate('7days')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
-            filterDate === 'week' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+            filterDate === '7days' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
-          This Month
+          7 Days
+        </button>
+        <button
+          onClick={() => setFilterDate('30days')}
+          className={`px-4 py-2 rounded-lg font-medium transition ${
+            filterDate === '30days' ? 'bg-slate-800 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'
+          }`}
+        >
+          30 Days
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-slate-100">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -213,7 +171,7 @@ export default function AdminSalesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-slate-100">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +185,7 @@ export default function AdminSalesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-slate-100">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,7 +199,7 @@ export default function AdminSalesPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+        <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-slate-100">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -256,45 +214,71 @@ export default function AdminSalesPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mb-8">
         <div className="lg:col-span-2 bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden">
           <div className="p-4 border-b bg-slate-50">
             <h2 className="text-lg font-semibold text-slate-800">Transaction History</h2>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Seller</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Items</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Total</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+
+          {filteredSales.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">No sales found for this period.</div>
+          ) : (
+            <>
+              <div className="md:hidden divide-y divide-slate-100">
                 {filteredSales.map((sale) => (
-                  <tr key={sale.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm font-medium text-slate-800">#{sale.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{sale.date}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{sale.seller}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{sale.items.length} item(s)</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-slate-800">₱{sale.total.toFixed(2)}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => setSelectedSale(sale)}
-                        className="text-slate-800 hover:text-slate-900 text-sm font-medium"
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
+                  <div key={sale.id} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-slate-800">#{sale.id.slice(-8)}</p>
+                      <p className="font-semibold text-slate-800">₱{sale.total.toFixed(2)}</p>
+                    </div>
+                    <p className="text-sm text-slate-600">{sale.date}</p>
+                    <p className="text-sm text-slate-600">Seller: {sale.seller}</p>
+                    <p className="text-sm text-slate-600">Items: {sale.items.length}</p>
+                    <button
+                      onClick={() => setSelectedSale(sale)}
+                      className="text-slate-800 hover:text-slate-900 text-sm font-medium"
+                    >
+                      View Details
+                    </button>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Seller</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Items</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Total</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredSales.map((sale) => (
+                      <tr key={sale.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 text-sm font-medium text-slate-800">#{sale.id.slice(-8)}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{sale.date}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{sale.seller}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{sale.items.length} item(s)</td>
+                        <td className="px-4 py-3 text-sm font-semibold text-slate-800">₱{sale.total.toFixed(2)}</td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => setSelectedSale(sale)}
+                            className="text-slate-800 hover:text-slate-900 text-sm font-medium"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden">
@@ -302,22 +286,28 @@ export default function AdminSalesPage() {
             <h2 className="text-lg font-semibold text-slate-800">Sales by Seller</h2>
           </div>
           <div className="p-4">
-            {Object.entries(salesBySeller).map(([seller, total]) => (
-              <div key={seller} className="flex items-center justify-between py-3 border-b last:border-0">
-                <div>
-                  <p className="font-medium text-slate-800">{seller}</p>
-                  <p className="text-xs text-slate-500">{filteredSales.filter(s => s.seller === seller).length} transactions</p>
+            {Object.keys(salesBySeller).length === 0 ? (
+              <p className="text-sm text-slate-500">No seller sales found for this period.</p>
+            ) : (
+              Object.entries(salesBySeller).map(([seller, total]) => (
+                <div key={seller} className="flex items-center justify-between py-3 border-b last:border-0">
+                  <div>
+                    <p className="font-medium text-slate-800">{seller}</p>
+                    <p className="text-xs text-slate-500">
+                      {filteredSales.filter((sale) => sale.seller === seller).length} transactions
+                    </p>
+                  </div>
+                  <p className="font-bold text-slate-800">₱{total.toFixed(2)}</p>
                 </div>
-                <p className="font-bold text-slate-800">₱{total.toFixed(2)}</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
 
       {selectedSale && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex items-center justify-between bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-t-xl">
               <h2 className="text-lg font-semibold">Transaction Details</h2>
               <button onClick={() => setSelectedSale(null)} className="hover:bg-white/10 p-1 rounded">
@@ -328,7 +318,7 @@ export default function AdminSalesPage() {
             </div>
 
             <div className="p-4">
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-xs text-slate-500">Transaction ID</p>
                   <p className="font-medium text-slate-800">#{selectedSale.id}</p>

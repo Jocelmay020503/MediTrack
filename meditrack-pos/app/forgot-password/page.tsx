@@ -92,9 +92,9 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+    <div className="min-h-screen flex items-center justify-center p-3 sm:p-4 bg-white">
       <div className="relative z-10 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-md" style={{ boxShadow: '0 20px 25px -5px rgba(15, 23, 42, 0.5), 0 10px 10px -5px rgba(15, 23, 42, 0.3)' }}>
-        <div className="p-10">
+        <div className="p-6 sm:p-8 md:p-10">
           <button
             onClick={() => router.push('/login')}
             className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition"
@@ -105,7 +105,7 @@ export default function ForgotPasswordPage() {
             <span className="font-semibold text-sm">Back to Login</span>
           </button>
 
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 sm:mb-8">
             <Image
               src="/logo.PNG"
               alt="MediTrack Logo"
@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
               priority
               className="object-contain rounded-lg mx-auto mb-4"
             />
-            <h1 className="text-2xl font-bold text-slate-800">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-800">
               {step === 'email' && 'Forgot Password'}
               {step === 'otp' && 'Verify OTP'}
               {step === 'reset' && 'Reset Password'}

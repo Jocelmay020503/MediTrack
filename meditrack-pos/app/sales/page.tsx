@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useAuth } from '../utils/useAuth';
+import { apiFetch } from '@/app/utils/apiClient';
 
 interface SaleItem {
   id: string;
@@ -22,93 +23,61 @@ interface Sale {
   total: number;
   cash: number;
   change: number;
+  seller: string;
 }
 
-const mockSales: Sale[] = [
-  {
-    id: '1',
-    date: '2026-03-10 09:30:00',
-    items: [
-      { id: '1', name: 'Paracetamol 500mg', quantity: 2, price: 25.00, total: 50.00 },
-      { id: '3', name: 'Ibuprofen 400mg', quantity: 1, price: 35.00, total: 35.00 },
-    ],
-    subtotal: 85.00,
-    discount: 0,
-    total: 85.00,
-    cash: 100.00,
-    change: 15.00,
-  },
-  {
-    id: '2',
-    date: '2026-03-10 10:15:00',
-    items: [
-      { id: '4', name: 'Cetirizine 10mg', quantity: 3, price: 45.00, total: 135.00 },
-    ],
-    subtotal: 135.00,
-    discount: 10.00,
-    total: 125.00,
-    cash: 125.00,
-    change: 0,
-  },
-  {
-    id: '3',
-    date: '2026-03-10 11:45:00',
-    items: [
-      { id: '2', name: 'Amoxicillin 250mg', quantity: 1, price: 85.00, total: 85.00 },
-      { id: '6', name: 'Omeprazole 20mg', quantity: 2, price: 65.00, total: 130.00 },
-    ],
-    subtotal: 215.00,
-    discount: 15.00,
-    total: 200.00,
-    cash: 250.00,
-    change: 50.00,
-  },
-  {
-    id: '4',
-    date: '2026-03-09 14:20:00',
-    items: [
-      { id: '8', name: 'Vitamin C 500mg', quantity: 5, price: 55.00, total: 275.00 },
-    ],
-    subtotal: 275.00,
-    discount: 25.00,
-    total: 250.00,
-    cash: 300.00,
-    change: 50.00,
-  },
-  {
-    id: '5',
-    date: '2026-03-09 16:00:00',
-    items: [
-      { id: '7', name: 'Salbutamol Inhaler', quantity: 1, price: 150.00, total: 150.00 },
-      { id: '5', name: 'Metformin 500mg', quantity: 2, price: 120.00, total: 240.00 },
-    ],
-    subtotal: 390.00,
-    discount: 0,
-    total: 390.00,
-    cash: 400.00,
-    change: 10.00,
-  },
-  {
-    id: '6',
-    date: '2026-03-08 09:00:00',
-    items: [
-      { id: '1', name: 'Paracetamol 500mg', quantity: 10, price: 25.00, total: 250.00 },
-      { id: '3', name: 'Ibuprofen 400mg', quantity: 5, price: 35.00, total: 175.00 },
-      { id: '4', name: 'Cetirizine 10mg', quantity: 2, price: 45.00, total: 90.00 },
-    ],
-    subtotal: 515.00,
-    discount: 50.00,
-    total: 465.00,
-    cash: 500.00,
-    change: 35.00,
-  },
-];
+interface SalesResponse {
+  sales: Sale[];
+}
+
+type DateFilter = 'today' | '7days' | '30days';
+
+function parseSaleDate(value: string) {
+  return new Date(value.replace(' ', 'T'));
+}
+
+function isWithinFilter(date: Date, filter: DateFilter) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const saleDay = new Date(date);
+  saleDay.setHours(0, 0, 0, 0);
+
+  const diffDays = Math.floor((today.getTime() - saleDay.getTime()) / (1000 * 60 * 60 * 24));
+
+  if (filter === 'today') return diffDays === 0;
+  if (filter === '7days') return diffDays >= 0 && diffDays <= 6;
+  return diffDays >= 0 && diffDays <= 29;
+}
 
 export default function SalesPage() {
-  const router = useRouter();
+  const { loading, logout } = useAuth('seller');
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
+  const [dateFilter, setDateFilter] = useState<DateFilter>('today');
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loadingSales, setLoadingSales] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadSales = async () => {
+    setLoadingSales(true);
+    setError('');
+
+    try {
+      const data = await apiFetch<SalesResponse>('/api/sales');
+      setSales(data.sales);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load sales';
+      setError(message);
+    } finally {
+      setLoadingSales(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSales();
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -116,30 +85,35 @@ export default function SalesPage() {
         setShowUserMenu(false);
       }
     }
+
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    router.push('/login');
-  };
+  const filteredSales = sales.filter((sale) => isWithinFilter(parseSaleDate(sale.date), dateFilter));
 
-  const totalSales = mockSales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalTransactions = mockSales.length;
-  const totalItemsSold = mockSales.reduce((sum, sale) => 
-    sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
+  const totalSales = filteredSales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalTransactions = filteredSales.length;
+  const totalItemsSold = filteredSales.reduce(
+    (sum, sale) => sum + sale.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
+    0
   );
 
-  const todaySales = mockSales
-    .filter(sale => sale.date.startsWith('2026-03-10'))
-    .reduce((sum, sale) => sum + sale.total, 0);
+  if (loading || loadingSales) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
       <header className="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg">
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 py-4">
           <div className="flex items-center gap-3">
             <Image
               src="/logo.PNG"
@@ -160,9 +134,9 @@ export default function SalesPage() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2 ml-2 relative" ref={userMenuRef}>
-              <button 
+              <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 hover:bg-white/10 p-1 rounded-lg transition"
               >
@@ -178,7 +152,7 @@ export default function SalesPage() {
               {showUserMenu && (
                 <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
                   <button
-                    onClick={handleLogout}
+                    onClick={logout}
                     className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,16 +165,67 @@ export default function SalesPage() {
             </div>
           </div>
         </div>
+
+        <nav className="md:hidden px-4 pb-3 flex items-center gap-2">
+          <Link href="/dashboard" className="touch-target px-3 py-1.5 rounded-md bg-white/10 text-white text-sm font-semibold">
+            Medicines
+          </Link>
+          <Link href="/sales" className="touch-target px-3 py-1.5 rounded-md bg-white text-slate-900 text-sm font-semibold">
+            Sales
+          </Link>
+        </nav>
       </header>
 
-      <main className="flex-1 bg-slate-50 p-6">
+      <main className="flex-1 bg-slate-50 p-4 sm:p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Sales Report</h1>
-          <p className="text-slate-500">View total sales and transaction history</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Sales Report</h1>
+              <p className="text-slate-500">View total sales and transaction history</p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDateFilter('today')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  dateFilter === 'today'
+                    ? 'bg-slate-800 text-white'
+                    : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                onClick={() => setDateFilter('7days')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  dateFilter === '7days'
+                    ? 'bg-slate-800 text-white'
+                    : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                7 Days
+              </button>
+              <button
+                onClick={() => setDateFilter('30days')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                  dateFilter === '30days'
+                    ? 'bg-slate-800 text-white'
+                    : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                30 Days
+              </button>
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-slate-100">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -214,7 +239,7 @@ export default function SalesPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-slate-100">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -228,7 +253,7 @@ export default function SalesPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 border border-slate-100">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                 <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,54 +272,84 @@ export default function SalesPage() {
           <div className="p-4 border-b bg-slate-50">
             <h2 className="text-lg font-semibold text-slate-800">Transaction History</h2>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Transaction ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Items</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Subtotal</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Discount</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Total</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Cash</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Change</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {mockSales.map((sale) => (
-                  <tr key={sale.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3 text-sm font-medium text-slate-800">#{sale.id}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{sale.date}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{sale.items.length} item(s)</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">₱{sale.subtotal.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-sm text-green-600">
-                      {sale.discount > 0 ? `-₱${sale.discount.toFixed(2)}` : '-₱0.00'}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold text-slate-800">₱{sale.total.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">₱{sale.cash.toFixed(2)}</td>
-                    <td className="px-4 py-3 text-sm text-green-600">₱{sale.change.toFixed(2)}</td>
-                    <td className="px-4 py-3">
-                      <button
-                        onClick={() => setSelectedSale(sale)}
-                        className="text-slate-800 hover:text-slate-900 text-sm font-medium"
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
+
+          {filteredSales.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">No sales found for this period.</div>
+          ) : (
+            <>
+              <div className="md:hidden divide-y divide-slate-100">
+                {filteredSales.map((sale) => (
+                  <div key={sale.id} className="p-4 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-slate-800">#{sale.id.slice(-8)}</p>
+                      <p className="font-semibold text-slate-800">₱{sale.total.toFixed(2)}</p>
+                    </div>
+                    <p className="text-sm text-slate-600">{sale.date}</p>
+                    <div className="grid grid-cols-1 min-[420px]:grid-cols-2 gap-2 text-sm">
+                      <p className="text-slate-600">Items: {sale.items.length}</p>
+                      <p className="text-slate-600">Cash: ₱{sale.cash.toFixed(2)}</p>
+                      <p className="text-slate-600">Discount: -₱{sale.discount.toFixed(2)}</p>
+                      <p className="text-green-600">Change: ₱{sale.change.toFixed(2)}</p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedSale(sale)}
+                      className="text-slate-800 hover:text-slate-900 text-sm font-medium"
+                    >
+                      View Details
+                    </button>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Transaction ID</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Items</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Subtotal</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Discount</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Total</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Cash</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Change</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredSales.map((sale) => (
+                      <tr key={sale.id} className="hover:bg-slate-50">
+                        <td className="px-4 py-3 text-sm font-medium text-slate-800">#{sale.id.slice(-8)}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{sale.date}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{sale.items.length} item(s)</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">₱{sale.subtotal.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-green-600">
+                          {sale.discount > 0 ? `-₱${sale.discount.toFixed(2)}` : '-₱0.00'}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold text-slate-800">₱{sale.total.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">₱{sale.cash.toFixed(2)}</td>
+                        <td className="px-4 py-3 text-sm text-green-600">₱{sale.change.toFixed(2)}</td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => setSelectedSale(sale)}
+                            className="text-slate-800 hover:text-slate-900 text-sm font-medium"
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
         </div>
       </main>
 
       {selectedSale && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <div className="p-4 border-b flex items-center justify-between bg-gradient-to-r from-slate-800 to-slate-900 text-white rounded-t-xl">
               <h2 className="text-lg font-semibold">Transaction Details</h2>
               <button onClick={() => setSelectedSale(null)} className="hover:bg-white/10 p-1 rounded">

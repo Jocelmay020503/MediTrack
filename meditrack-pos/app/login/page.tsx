@@ -157,7 +157,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-white">
+    <div className="min-h-screen flex items-center justify-center p-3 sm:p-4 bg-white">
       <div className="absolute inset-0 bg-white" />
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
@@ -165,7 +165,7 @@ export default function LoginPage() {
       </div>
       
       <div className="relative z-10 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl w-full max-w-4xl flex overflow-hidden" style={{ boxShadow: '0 20px 25px -5px rgba(15, 23, 42, 0.5), 0 10px 10px -5px rgba(15, 23, 42, 0.3)' }}>
-        <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-slate-800 to-slate-900 flex-col items-center justify-center p-12 relative">
+        <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-slate-800 to-slate-900 flex-col items-center justify-center p-8 lg:p-12 relative">
           <button
             onClick={() => router.push('/')}
             className="absolute top-6 left-6 flex items-center gap-2 text-slate-400 hover:text-white transition"
@@ -187,8 +187,18 @@ export default function LoginPage() {
           <p className="text-slate-400 text-center mt-3">Medicine Store Management System</p>
         </div>
 
-        <div className="w-full md:w-1/2 p-10">
-          <div className="md:hidden text-center mb-8">
+        <div className="w-full md:w-1/2 p-6 sm:p-8 md:p-10">
+          <button
+            onClick={() => router.push('/')}
+            className="md:hidden inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-sm font-medium">Back</span>
+          </button>
+
+          <div className="md:hidden text-center mb-6 sm:mb-8">
             <Image
               src="/logo.PNG"
               alt="MediTrack Logo"
@@ -203,7 +213,7 @@ export default function LoginPage() {
           {view === 'login' ? (
             <>
               <div className="mb-8">
-                <h2 className="text-2xl font-semibold text-slate-800">Welcome Back</h2>
+                <h2 className="text-xl sm:text-2xl font-semibold text-slate-800">Welcome Back</h2>
                 <p className="text-slate-500 text-sm mt-1">Sign in to continue</p>
               </div>
 
@@ -216,14 +226,14 @@ export default function LoginPage() {
 
                 <div>
                   <label htmlFor="username" className="block text-slate-700 font-medium mb-2 text-sm">
-                    Username
+                    Username or Email
                   </label>
                   <input
                     id="username"
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Enter your username"
+                    placeholder="Enter your username or email"
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-800 focus:border-transparent transition"
                     required
                     disabled={loading}
@@ -288,11 +298,11 @@ export default function LoginPage() {
               <div className="mt-8 pt-6 border-t border-slate-200">
                 <p className="text-xs text-slate-500 text-center mb-2">Demo Credentials</p>
                 <div className="space-y-2 text-xs text-slate-600">
-                  <div className="flex justify-center gap-2">
-                    <span><span className="font-medium">Admin:</span> admin / password123</span>
+                  <div className="flex justify-center gap-2 text-center">
+                    <span><span className="font-medium">Admin:</span> demoadmin / password123</span>
                   </div>
-                  <div className="flex justify-center gap-2">
-                    <span><span className="font-medium">Seller:</span> seller / password123</span>
+                  <div className="flex justify-center gap-2 text-center">
+                    <span><span className="font-medium">Seller:</span> demoseller / password123</span>
                   </div>
                 </div>
               </div>
@@ -310,7 +320,7 @@ export default function LoginPage() {
               </button>
 
               <div className="mb-8">
-                <h2 className="text-2xl font-semibold text-slate-800">
+                <h2 className="text-xl sm:text-2xl font-semibold text-slate-800">
                   {forgotStep === 'email' && 'Forgot Password'}
                   {forgotStep === 'otp' && 'Verify Temporary Password'}
                   {forgotStep === 'reset' && 'Reset Password'}

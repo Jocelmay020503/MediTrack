@@ -1,21 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import prisma from '@/lib/prisma';
+import { createSessionToken, toClientUser } from '@/lib/auth';
 
-const users = [
-  {
-    id: '1',
-    username: 'admin',
-    password: 'password123',
-    role: 'Admin',
-    name: 'Admin User',
-  },
-  {
-    id: '2',
-    username: 'seller',
-    password: 'password123',
-    role: 'Sales Staff',
-    name: 'John Seller',
-  },
-];
+const SESSION_DAYS = 7;
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,38 +11,61 @@ export async function POST(request: NextRequest) {
 
     if (!username || !password) {
       return NextResponse.json(
-        { message: 'Username and password are required' },
+        { message: 'Username/email and password are required' },
         { status: 400 }
       );
     }
 
-    const user = users.find(
-      (u) => u.username === username && u.password === password
-    );
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { username: username.toLowerCase() },
+          { email: username.toLowerCase() },
+        ],
+      },
+    });
 
     if (!user) {
       return NextResponse.json(
-        { message: 'Invalid username or password' },
+        { message: 'Invalid username/email or password' },
         { status: 401 }
       );
     }
 
-    const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { message: 'Invalid username/email or password' },
+        { status: 401 }
+      );
+    }
+
+    const token = createSessionToken();
+    const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+
+    await prisma.$transaction([
+      prisma.session.create({
+        data: {
+          token,
+          userId: user.id,
+          expiresAt,
+        },
+      }),
+      prisma.user.update({
+        where: { id: user.id },
+        data: { lastLoginAt: new Date() },
+      }),
+    ]);
 
     return NextResponse.json(
       {
         message: 'Login successful',
         token,
-        user: {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          name: user.name,
-        },
+        user: toClientUser(user),
       },
       { status: 200 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

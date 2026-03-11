@@ -6,6 +6,7 @@ interface User {
   username: string;
   role: string;
   name: string;
+  storeId?: string;
 }
 
 interface AuthState {
@@ -40,7 +41,7 @@ export function useAuth(requiredRole?: string) {
       if (requiredRole) {
         const userRole = user.role?.toLowerCase() || '';
         const isAdmin = userRole === 'admin';
-        const isSeller = userRole === 'sales staff';
+        const isSeller = userRole === 'sales staff' || userRole === 'seller';
 
         // Check role access
         if (requiredRole === 'admin' && !isAdmin) {
@@ -69,7 +70,22 @@ export function useAuth(requiredRole?: string) {
     }
   }, [router, requiredRole]);
 
-  const logout = () => {
+  const logout = async () => {
+    const token = localStorage.getItem('authToken');
+
+    try {
+      if (token) {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch {
+      // Ignore logout API failures and clear local state anyway.
+    }
+
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
     router.push('/login');

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useAuth } from '../utils/useAuth';
+import { apiFetch } from '@/app/utils/apiClient';
 
 interface Medicine {
   id: string;
@@ -15,55 +16,129 @@ interface Medicine {
   expiryDate: string;
 }
 
-const medicines: Medicine[] = [
-  { id: '1', name: 'Paracetamol 500mg', category: 'Pain Relief', price: 25.00, stock: 150, image: '/logo.PNG', instructions: 'Every 4 hours, take with meals', expiryDate: '2026-06-15' },
-  { id: '2', name: 'Amoxicillin 250mg', category: 'Antibiotic', price: 85.00, stock: 80, image: '/logo.PNG', instructions: 'Every 8 hours, take with meals', expiryDate: '2026-05-20' },
-  { id: '3', name: 'Ibuprofen 400mg', category: 'Pain Relief', price: 35.00, stock: 120, image: '/logo.PNG', instructions: 'Every 6 hours, take after meals', expiryDate: '2026-12-01' },
-  { id: '4', name: 'Cetirizine 10mg', category: 'Allergy', price: 45.00, stock: 200, image: '/logo.PNG', instructions: 'Once daily, take at night', expiryDate: '2026-08-30' },
-  { id: '5', name: 'Metformin 500mg', category: 'Diabetes', price: 120.00, stock: 60, image: '/logo.PNG', instructions: 'Twice daily, take with meals', expiryDate: '2026-03-15' },
-  { id: '6', name: 'Omeprazole 20mg', category: 'Gastric', price: 65.00, stock: 90, image: '/logo.PNG', instructions: 'Once daily, before breakfast', expiryDate: '2026-11-20' },
-  { id: '7', name: 'Salbutamol Inhaler', category: 'Respiratory', price: 150.00, stock: 40, image: '/logo.PNG', instructions: 'When needed, max 2 puffs', expiryDate: '2026-04-01' },
-  { id: '8', name: 'Vitamin C 500mg', category: 'Supplements', price: 55.00, stock: 300, image: '/logo.PNG', instructions: 'Once daily, take with meals', expiryDate: '2027-01-15' },
-  { id: '9', name: 'Aspirin 100mg', category: 'Pain Relief', price: 30.00, stock: 15, image: '/logo.PNG', instructions: 'Once daily, after meals', expiryDate: '2026-03-20' },
-  { id: '10', name: 'Co-Trimoxazole', category: 'Antibiotic', price: 75.00, stock: 5, image: '/logo.PNG', instructions: 'Every 12 hours, take with meals', expiryDate: '2026-05-10' },
-];
+interface MedicinesResponse {
+  medicines: Medicine[];
+}
+
+interface SaleItem {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+interface Sale {
+  id: string;
+  date: string;
+  items: SaleItem[];
+  subtotal: number;
+  discount: number;
+  total: number;
+  cash: number;
+  change: number;
+  seller: string;
+}
+
+interface SalesResponse {
+  sales: Sale[];
+}
 
 function getDaysUntilExpiry(expiryDate: string): number {
-  const today = new Date('2026-03-10');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const expiry = new Date(expiryDate);
+  expiry.setHours(0, 0, 0, 0);
+
   const diff = expiry.getTime() - today.getTime();
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+function parseSaleDate(value: string) {
+  return new Date(value.replace(' ', 'T'));
+}
+
+function isSameDay(first: Date, second: Date) {
+  return (
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate()
+  );
+}
+
 export default function AdminDashboard() {
-  const { user, loading, logout } = useAuth('admin');
+  const { loading } = useAuth('admin');
   const [selectedTab, setSelectedTab] = useState<'overview' | 'expiring'>('overview');
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadDashboardData = async () => {
+    setLoadingData(true);
+    setError('');
+
+    try {
+      const [medicineData, salesData] = await Promise.all([
+        apiFetch<MedicinesResponse>('/api/medicines'),
+        apiFetch<SalesResponse>('/api/sales'),
+      ]);
+
+      setMedicines(medicineData.medicines);
+      setSales(salesData.sales);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load dashboard data';
+      setError(message);
+    } finally {
+      setLoadingData(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
 
   const totalProducts = medicines.length;
   const totalStock = medicines.reduce((sum, med) => sum + med.stock, 0);
-  const lowStockItems = medicines.filter(med => med.stock < 20).length;
-  const expiringItems = medicines.filter(med => getDaysUntilExpiry(med.expiryDate) <= 30).length;
-  const outOfStock = medicines.filter(med => med.stock === 0).length;
-  
-  const totalValue = medicines.reduce((sum, med) => sum + (med.price * med.stock), 0);
-  const lowStockValue = medicines.filter(med => med.stock < 20).reduce((sum, med) => sum + (med.price * med.stock), 0);
+  const lowStockItems = medicines.filter((med) => med.stock < 20).length;
+  const expiringItems = medicines.filter((med) => getDaysUntilExpiry(med.expiryDate) <= 30).length;
+  const outOfStock = medicines.filter((med) => med.stock === 0).length;
+
+  const totalValue = medicines.reduce((sum, med) => sum + med.price * med.stock, 0);
+  const lowStockValue = medicines
+    .filter((med) => med.stock < 20)
+    .reduce((sum, med) => sum + med.price * med.stock, 0);
 
   const expiringSoon = medicines
-    .filter(med => getDaysUntilExpiry(med.expiryDate) <= 30)
+    .filter((med) => getDaysUntilExpiry(med.expiryDate) <= 30)
     .sort((a, b) => getDaysUntilExpiry(a.expiryDate) - getDaysUntilExpiry(b.expiryDate));
 
   const lowStock = medicines
-    .filter(med => med.stock < 20)
+    .filter((med) => med.stock < 20)
     .sort((a, b) => a.stock - b.stock);
 
-  const categories = [...new Set(medicines.map(med => med.category))];
-  const categoryStats = categories.map(cat => ({
+  const categories = [...new Set(medicines.map((med) => med.category))];
+  const categoryStats = categories.map((cat) => ({
     name: cat,
-    count: medicines.filter(med => med.category === cat).length,
-    totalStock: medicines.filter(med => med.category === cat).reduce((sum, med) => sum + med.stock, 0)
+    count: medicines.filter((med) => med.category === cat).length,
+    totalStock: medicines
+      .filter((med) => med.category === cat)
+      .reduce((sum, med) => sum + med.stock, 0),
   }));
 
-  if (loading) {
+  const today = new Date();
+  const todaySales = sales.filter((sale) => isSameDay(parseSaleDate(sale.date), today));
+  const monthSales = sales.filter((sale) => {
+    const saleDate = parseSaleDate(sale.date);
+    return saleDate.getMonth() === today.getMonth() && saleDate.getFullYear() === today.getFullYear();
+  });
+
+  const todaySalesAmount = todaySales.reduce((sum, sale) => sum + sale.total, 0);
+  const monthSalesAmount = monthSales.reduce((sum, sale) => sum + sale.total, 0);
+  const monthTransactions = monthSales.length;
+
+  if (loading || loadingData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center">
@@ -77,16 +152,16 @@ export default function AdminDashboard() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-800">Dashboard</h1>
         <p className="text-slate-500">Overview and analytics report</p>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         <button
           onClick={() => setSelectedTab('overview')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
-            selectedTab === 'overview' 
-              ? 'bg-slate-800 text-white' 
+            selectedTab === 'overview'
+              ? 'bg-slate-800 text-white'
               : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -95,8 +170,8 @@ export default function AdminDashboard() {
         <button
           onClick={() => setSelectedTab('expiring')}
           className={`px-4 py-2 rounded-lg font-medium transition ${
-            selectedTab === 'expiring' 
-              ? 'bg-slate-800 text-white' 
+            selectedTab === 'expiring'
+              ? 'bg-slate-800 text-white'
               : 'bg-white text-slate-600 hover:bg-slate-100'
           }`}
         >
@@ -104,9 +179,15 @@ export default function AdminDashboard() {
         </button>
       </div>
 
+      {error && (
+        <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {error}
+        </div>
+      )}
+
       {selectedTab === 'overview' && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-md p-6 border border-slate-100">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -164,42 +245,60 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden">
               <div className="p-4 border-b bg-slate-50">
-                <h2 className="text-lg font-semibold text-slate-800">Stock Value</h2>
+                <h2 className="text-lg font-semibold text-slate-800">Inventory Value</h2>
               </div>
               <div className="p-6">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-4 gap-4">
                   <span className="text-slate-600">Total Inventory Value</span>
-                  <span className="text-2xl font-bold text-slate-800">₱{totalValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-lg sm:text-2xl font-bold text-slate-800 text-right">
+                    ₱{totalValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center gap-4">
                   <span className="text-slate-600">Low Stock Value</span>
-                  <span className="text-xl font-semibold text-yellow-600">₱{lowStockValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-xl font-semibold text-yellow-600">
+                    ₱{lowStockValue.toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                  </span>
                 </div>
               </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden">
               <div className="p-4 border-b bg-slate-50">
-                <h2 className="text-lg font-semibold text-slate-800">Out of Stock</h2>
+                <h2 className="text-lg font-semibold text-slate-800">Sales Snapshot</h2>
               </div>
-              <div className="p-6">
-                <p className="text-4xl font-bold text-red-600 mb-2">{outOfStock}</p>
-                <p className="text-slate-500">Products with zero stock</p>
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">Today Sales</span>
+                  <span className="text-xl font-semibold text-slate-800">₱{todaySalesAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">This Month Sales</span>
+                  <span className="text-xl font-semibold text-slate-800">₱{monthSalesAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">This Month Transactions</span>
+                  <span className="text-xl font-semibold text-slate-800">{monthTransactions}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">Out of Stock</span>
+                  <span className="text-xl font-semibold text-red-600">{outOfStock}</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <div className="bg-white rounded-xl shadow-md border border-slate-100 overflow-hidden">
               <div className="p-4 border-b bg-slate-50">
                 <h2 className="text-lg font-semibold text-slate-800">Low Stock Medicines</h2>
               </div>
               <div className="divide-y divide-slate-100">
                 {lowStock.map((med) => (
-                  <div key={med.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                  <div key={med.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50">
                     <div className="flex items-center gap-3">
                       <Image
                         src={med.image}
@@ -231,7 +330,7 @@ export default function AdminDashboard() {
               </div>
               <div className="divide-y divide-slate-100">
                 {categoryStats.map((cat) => (
-                  <div key={cat.name} className="p-4 flex items-center justify-between">
+                  <div key={cat.name} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <span className="font-medium text-slate-800">{cat.name}</span>
                     <div className="text-right">
                       <p className="font-semibold text-slate-700">{cat.count} products</p>
@@ -239,6 +338,9 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
+                {categoryStats.length === 0 && (
+                  <div className="p-4 text-center text-slate-500">No category data yet</div>
+                )}
               </div>
             </div>
           </div>
@@ -256,9 +358,9 @@ export default function AdminDashboard() {
               const daysLeft = getDaysUntilExpiry(med.expiryDate);
               const isCritical = daysLeft <= 7;
               const isWarning = daysLeft <= 14;
-              
+
               return (
-                <div key={med.id} className="p-4 flex items-center justify-between hover:bg-slate-50">
+                <div key={med.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50">
                   <div className="flex items-center gap-3">
                     <Image
                       src={med.image}
@@ -273,9 +375,11 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-bold ${
-                      isCritical ? 'text-red-600' : isWarning ? 'text-yellow-600' : 'text-slate-700'
-                    }`}>
+                    <p
+                      className={`font-bold ${
+                        isCritical ? 'text-red-600' : isWarning ? 'text-yellow-600' : 'text-slate-700'
+                      }`}
+                    >
                       {daysLeft} days left
                     </p>
                     <p className="text-xs text-slate-500">Expires: {med.expiryDate}</p>

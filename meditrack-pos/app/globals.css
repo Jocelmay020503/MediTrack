@@ -19,6 +19,34 @@ body {
   font-family: var(--font-poppins), system-ui, sans-serif;
 }
 
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-poppins), system-ui, sans-serif;
+}
+
+@media (max-width: 767px) {
+  button:not(.touch-inline) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  a.touch-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }

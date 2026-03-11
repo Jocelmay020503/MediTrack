@@ -20,6 +20,8 @@ export default function LandingPage() {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [signupError, setSignupError] = useState('');
+  const [signupSuccess, setSignupSuccess] = useState('');
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 10);
@@ -29,10 +31,38 @@ export default function LandingPage() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSignupError('');
+    setSignupSuccess('');
     setLoading(true);
-    setTimeout(() => router.push('/login'), 800);
+
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(signupData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setSignupError(data.message || 'Unable to create account. Please try again.');
+        return;
+      }
+
+      setSignupSuccess(
+        `Account created. You can now log in using ${data.username || 'your username'} or your email.`
+      );
+
+      setTimeout(() => router.push('/login'), 1000);
+    } catch {
+      setSignupError('Unable to create account. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,7 +76,7 @@ export default function LandingPage() {
         }`}
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-[74px]">
+          <div className="flex justify-between items-center h-[74px] gap-3">
             <div className="flex items-center gap-3">
               <div className="relative h-11 w-11 rounded-xl bg-white/10 ring-1 ring-white/20 overflow-hidden shadow-lg">
                 <Image
@@ -58,20 +88,20 @@ export default function LandingPage() {
                 />
               </div>
               <div className="leading-tight">
-                <span className="block text-xl font-bold text-white">MediTrack</span>
-                <span className="block text-[10px] uppercase tracking-[0.18em] text-slate-300">Medicine Store Platform</span>
+                <span className="block text-lg sm:text-xl font-bold text-white">MediTrack</span>
+                <span className="hidden sm:block text-[10px] uppercase tracking-[0.18em] text-slate-300">Medicine Store Platform</span>
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => router.push('/login')}
-                className="px-4 py-2 text-sm font-bold text-slate-100 border border-white/30 rounded-lg hover:bg-white/10 transition"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold text-slate-100 border border-white/30 rounded-lg hover:bg-white/10 transition"
               >
                 Log In
               </button>
               <button
                 onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-4 py-2 text-sm font-bold bg-white text-slate-900 rounded-lg hover:bg-slate-100 shadow-md transition"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold bg-white text-slate-900 rounded-lg hover:bg-slate-100 shadow-md transition"
               >
                 Sign Up
               </button>
@@ -81,29 +111,35 @@ export default function LandingPage() {
       </nav>
 
       <main className="pt-[74px]">
-        {/* Hero */}
-        <section className="pt-32 pb-20 px-4">
+        {/* Hero - Who is this for? What problem does it solve? */}
+        <section className="pt-14 sm:pt-24 lg:pt-32 pb-14 sm:pb-20 px-4">
           <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
               <div className="text-center lg:text-left">
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-slate-900 leading-tight">
-                  Manage Your Pharmacy with Ease
+                <span className="inline-block px-4 py-1.5 bg-blue-100 text-blue-700 text-sm font-bold rounded-full mb-4">
+                  For Philippine Pharmacies
+                </span>
+                <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold text-slate-900 leading-tight">
+                  Your Medicine Store, Always Under Control
                 </h1>
-                <p className="mt-6 text-xl font-semibold text-slate-700 max-w-lg mx-auto lg:mx-0 leading-relaxed">
-                  Track medicine stock and process sales — all in one simple system built for Philippine pharmacies.
+                <p className="mt-6 text-base sm:text-lg lg:text-xl font-semibold text-slate-700 max-w-lg mx-auto lg:mx-0 leading-relaxed">
+                  Know your stock. Catch expiring medicines early. Monitor every sale — even when you're miles away from your store.
                 </p>
-                <div className="mt-8 flex gap-4 justify-center lg:justify-start">
-                  <button onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })} className="px-6 py-3 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800">
-                    Get Started Free
+                <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center lg:justify-start">
+                  <button onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })} className="w-full sm:w-auto px-6 py-3 bg-slate-900 text-white font-bold rounded-lg hover:bg-slate-800">
+                    Start Free Trial
                   </button>
-                  <button onClick={() => router.push('/login')} className="px-6 py-3 border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50">
-                    Log In
+                  <button onClick={() => router.push('/login')} className="w-full sm:w-auto px-6 py-3 border border-slate-300 text-slate-700 font-bold rounded-lg hover:bg-slate-50">
+                    See Demo
                   </button>
                 </div>
+                <p className="mt-4 text-sm text-slate-500 font-medium">
+                  ✓ No credit card required &nbsp; ✓ Free forever plan
+                </p>
               </div>
 
-              {/* Dashboard Preview */}
-              <div className="hidden lg:block">
+              {/* Dashboard Preview - What outcome will they get? */}
+              <div className="hidden md:block">
                 <div className="bg-white rounded-xl shadow-2xl border border-slate-200 overflow-hidden" style={{ boxShadow: '0 20px 25px -5px rgba(15, 23, 42, 0.5), 0 10px 10px -5px rgba(15, 23, 42, 0.3)' }}>
                   <div className="bg-slate-800 px-4 py-3 border-b border-slate-700 flex items-center gap-2">
                     <div className="w-3 h-3 bg-red-400 rounded-full" />
@@ -123,10 +159,13 @@ export default function LandingPage() {
                       </div>
                       <div className="bg-slate-50 rounded-lg p-3 text-center">
                         <p className="text-2xl font-bold text-blue-600">47</p>
-                        <p className="text-sm font-bold text-slate-700 mt-1">Orders</p>
+                        <p className="text-sm font-bold text-slate-700 mt-1">Sold</p>
                       </div>
                     </div>
-                    <p className="text-sm font-bold text-slate-700 uppercase mb-4 tracking-wide">Medicine List</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-sm font-bold text-slate-700 uppercase tracking-wide">Medicine List</p>
+                      <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-medium">2 Low Stock</span>
+                    </div>
                     <div className="space-y-2">
                       {mockMedicines.map((med, idx) => (
                         <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
@@ -148,8 +187,47 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* 2 Main Features */}
-        <section className="py-16 bg-slate-50">
+        {/* What changes after they use? */}
+        <section className="py-16 px-4 bg-slate-50">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">What Changes After You Use MediTrack?</h2>
+              <p className="mt-3 text-lg text-slate-600 max-w-2xl mx-auto">You'll save time, reduce losses, and serve customers faster.</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                <div className="w-12 h-12 bg-green-100 text-green-600 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Never Run Out of Stock</h3>
+                <p className="text-slate-600">Get instant alerts when medicines are running low, so you can reorder before you run out.</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Checkout in Seconds</h3>
+                <p className="text-slate-600">Process sales instantly with automatic price calculation and digital receipts.</p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-md border border-slate-100">
+                <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center mb-4">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Reduce Waste & Save Money</h3>
+                <p className="text-slate-600">Know exactly which medicines are expiring soon and sell them before they go to waste.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Main Features */}
+        <section className="py-16 px-4 bg-slate-50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">Everything You Need</h2>
@@ -161,7 +239,7 @@ export default function LandingPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2-2 2-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Stock Monitoring</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Smart Stock Monitoring</h3>
                 <p className="text-slate-200 text-base font-semibold leading-relaxed">Track medicine inventory in real-time. Get alerts when stock runs low.</p>
               </div>
               <div className="bg-gradient-to-b from-slate-800 to-slate-900 p-6 rounded-xl shadow-lg border border-slate-700 text-white">
@@ -177,14 +255,14 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Sign Up */}
+        {/* Sign Up - What should they do next? */}
         <section id="signup" className="py-16 px-4">
           <div className="max-w-md mx-auto">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-slate-900">Start Using MediTrack</h2>
-              <p className="mt-2 text-slate-600 text-base font-semibold">Create your account — no credit card needed</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Start Your Free Trial Today</h2>
+              <p className="mt-2 text-slate-600 text-base font-semibold">No credit card required. Set up in 2 minutes.</p>
             </div>
-            <div className="bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700 rounded-xl shadow-lg p-6 text-white">
+            <div className="bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700 rounded-xl shadow-lg p-5 sm:p-6 text-white">
               <div className="text-center mb-6">
                 <div className="flex items-center justify-center gap-3 mb-3">
                   <div className="relative h-12 w-12 rounded-xl bg-white/10 ring-1 ring-white/20 overflow-hidden shadow-lg">
@@ -199,22 +277,35 @@ export default function LandingPage() {
                 </div>
               </div>
               <form onSubmit={handleSignup} className="space-y-4">
+                {signupError && (
+                  <div className="bg-red-500/15 border border-red-300/30 text-red-100 px-4 py-3 rounded-lg text-sm">
+                    {signupError}
+                  </div>
+                )}
+
+                {signupSuccess && (
+                  <div className="bg-green-500/15 border border-green-300/30 text-green-100 px-4 py-3 rounded-lg text-sm">
+                    {signupSuccess}
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-base font-bold text-slate-100 mb-2">Store Name</label>
-                  <input type="text" value={signupData.storeName} onChange={(e) => setSignupData({...signupData, storeName: e.target.value})} placeholder="Your pharmacy name" className="w-full px-4 py-3 border border-slate-500 bg-slate-700/50 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200" required />
+                  <input type="text" value={signupData.storeName} onChange={(e) => setSignupData({...signupData, storeName: e.target.value})} placeholder="Your pharmacy name" className="w-full px-4 py-3 border border-slate-500 bg-slate-700/50 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200" required disabled={loading} />
                 </div>
                 <div>
                   <label className="block text-base font-bold text-slate-100 mb-2">Email</label>
-                  <input type="email" value={signupData.email} onChange={(e) => setSignupData({...signupData, email: e.target.value})} placeholder="you@example.com" className="w-full px-4 py-3 border border-slate-500 bg-slate-700/50 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200" required />
+                  <input type="email" value={signupData.email} onChange={(e) => setSignupData({...signupData, email: e.target.value})} placeholder="you@example.com" className="w-full px-4 py-3 border border-slate-500 bg-slate-700/50 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200" required disabled={loading} />
                 </div>
                 <div>
                   <label className="block text-base font-bold text-slate-100 mb-2">Password</label>
                   <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} value={signupData.password} onChange={(e) => setSignupData({...signupData, password: e.target.value})} placeholder="Create password" className="w-full px-4 py-3 border border-slate-500 bg-slate-700/50 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 pr-12" required />
+                    <input type={showPassword ? 'text' : 'password'} value={signupData.password} onChange={(e) => setSignupData({...signupData, password: e.target.value})} placeholder="Create password" className="w-full px-4 py-3 border border-slate-500 bg-slate-700/50 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-200 pr-12" required disabled={loading} />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-white transition"
+                      disabled={loading}
                     >
                       {showPassword ? (
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -235,7 +326,7 @@ export default function LandingPage() {
                 </button>
               </form>
               <p className="mt-4 text-center text-base text-slate-200 font-semibold">
-                Already have an account? <button onClick={() => router.push('/login')} className="text-white font-bold underline underline-offset-2">Log In</button>
+                Already have an account? <button onClick={() => router.push('/login')} className="touch-inline text-white font-bold underline underline-offset-2">Log In</button>
               </p>
             </div>
           </div>
@@ -243,7 +334,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="bg-gradient-to-r from-slate-800 to-slate-900 border-t border-slate-700 py-8">
-        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-4">
           <div className="flex items-center gap-2">
             <div className="relative h-10 w-10 rounded-lg bg-white/10 ring-1 ring-white/20 overflow-hidden shadow-lg">
               <Image
@@ -255,7 +346,7 @@ export default function LandingPage() {
             </div>
             <span className="text-lg font-bold text-white">MediTrack</span>
           </div>
-          <p className="text-slate-200 text-base font-semibold">© 2026 MediTrack. All rights reserved.</p>
+          <p className="text-slate-200 text-sm sm:text-base font-semibold">© 2026 MediTrack. All rights reserved.</p>
         </div>
       </footer>
     </div>
