@@ -39,6 +39,7 @@ export default function Dashboard() {
   const [cart, setCart] = useState<{ medicine: Medicine; quantity: number }[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [notification, setNotification] = useState(0);
+  const [showNotificationDropdown, setShowNotificationDropdown] = useState(false);
   const [cash, setCash] = useState('');
   const [deduction, setDeduction] = useState('');
   const [showReceipt, setShowReceipt] = useState(false);
@@ -47,15 +48,20 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const notificationRef = useRef<HTMLDivElement>(null);
 
   const loadMedicines = async () => {
     setLoadingMedicines(true);
 
     try {
-      const data = await apiFetch<{ medicines: Medicine[] }>('/api/medicines');
-      setMedicines(data.medicines);
-      const lowStockCount = data.medicines.filter((m) => m.stock <= 10).length;
-      setNotification(lowStockCount);
+    const data = await apiFetch<{ medicines: Medicine[] }>('/api/medicines');
+    setMedicines(data.medicines);
+    const lowStockCount = data.medicines.filter((m) => m.stock <= 10).length;
+    const expiringCount = data.medicines.filter((m) => {
+      const days = getDaysUntilExpiry(m.expiryDate);
+      return days > 0 && days <= 30;
+    }).length;
+    setNotification(lowStockCount + expiringCount);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load medicines';
       setError(message);
@@ -72,6 +78,9 @@ export default function Dashboard() {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false);
+      }
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setShowNotificationDropdown(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -277,16 +286,56 @@ export default function Dashboard() {
             </div>
 
             {/* Low stock bell */}
-            <button className="relative p-2 hover:bg-white/10 rounded-lg transition">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {notification > 0 && (
-                <span className="absolute top-0.5 right-0.5 bg-red-500 text-xs w-4 h-4 flex items-center justify-center rounded-full leading-none">
-                  {notification}
-                </span>
+            <div className="relative" ref={notificationRef}>
+              <button 
+                onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
+                className="relative p-2 hover:bg-white/10 rounded-lg transition"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {notification > 0 && (
+                  <span className="absolute top-0.5 right-0.5 bg-red-500 text-xs w-4 h-4 flex items-center justify-center rounded-full leading-none">
+                    {notification}
+                  </span>
+                )}
+              </button>
+
+              {showNotificationDropdown && (
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+                  <div className="px-4 py-2 border-b">
+                    <h3 className="font-semibold text-slate-800">Notifications</h3>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto">
+                    {medicines.filter(m => getDaysUntilExpiry(m.expiryDate) > 0 && getDaysUntilExpiry(m.expiryDate) <= 30).length > 0 && (
+                      <div className="px-4 py-2">
+                        <p className="text-xs font-medium text-orange-600 uppercase mb-2">Expiring Soon</p>
+                        {medicines.filter(m => getDaysUntilExpiry(m.expiryDate) > 0 && getDaysUntilExpiry(m.expiryDate) <= 30).map(med => (
+                          <div key={med.id} className="py-2 border-b border-slate-100 last:border-0">
+                            <p className="text-sm text-slate-800 font-medium">{med.name}</p>
+                            <p className="text-xs text-orange-600">Expires in {getDaysUntilExpiry(med.expiryDate)} days</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {medicines.filter(m => m.stock <= 10).length > 0 && (
+                      <div className="px-4 py-2">
+                        <p className="text-xs font-medium text-red-600 uppercase mb-2">Low Stock</p>
+                        {medicines.filter(m => m.stock <= 10).map(med => (
+                          <div key={med.id} className="py-2 border-b border-slate-100 last:border-0">
+                            <p className="text-sm text-slate-800 font-medium">{med.name}</p>
+                            <p className="text-xs text-red-600">Only {med.stock} units left</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {notification === 0 && (
+                      <p className="px-4 py-4 text-sm text-slate-500 text-center">No notifications</p>
+                    )}
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
 
             {/* Cart */}
             <button

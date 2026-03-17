@@ -9,9 +9,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start -p ${PORT:-3000}",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "node prisma/seed.js"
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "node prisma/seed.js",
+    "db:setup": "npm run prisma:deploy && npm run prisma:seed"
   },
   "dependencies": {
     "@prisma/client": "^6.19.2",
