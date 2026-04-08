@@ -13,6 +13,8 @@ const mockMedicines = [
 export default function LandingPage() {
   const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [activeMenu, setActiveMenu] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [signupData, setSignupData] = useState({
     storeName: '',
@@ -77,8 +79,11 @@ export default function LandingPage() {
       >
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-[74px] gap-3">
-            <div className="flex items-center gap-3">
-              <div className="relative h-11 w-11 rounded-xl bg-white/10 ring-1 ring-white/20 overflow-hidden shadow-lg">
+            <div 
+              className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition"
+              onClick={() => document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              <div className="relative h-11 w-11 rounded-xl bg-white/10 ring-1 ring-white/20 overflow-hidden shadow-lg hover:ring-white/40 transition">
                 <Image
                   src="/logo.PNG"
                   alt="MediTrack Logo"
@@ -92,27 +97,149 @@ export default function LandingPage() {
                 <span className="hidden sm:block text-[10px] uppercase tracking-[0.18em] text-slate-300">Medicine Store Platform</span>
               </div>
             </div>
+            
+            {/* Navigation Menu - Desktop */}
+            <div className="hidden md:flex items-center gap-2">
+              {/* Home */}
+              <button
+                onClick={() => {
+                  setActiveMenu('home');
+                  document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className={`relative px-4 py-2 rounded-lg transition-all duration-300 group flex items-center gap-2 ${
+                  activeMenu === 'home'
+                    ? 'bg-white/20 text-white'
+                    : 'text-slate-100 hover:bg-white/10'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 16l4-4m0 0l4 4m-4-4v4m0-11l-4 4m0 0l-4-4" />
+                </svg>
+                <span className="text-sm font-semibold">Home</span>
+              </button>
+
+              {/* Benefits */}
+              <button
+                onClick={() => {
+                  setActiveMenu('benefits');
+                  document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className={`relative px-4 py-2 rounded-lg transition-all duration-300 group flex items-center gap-2 ${
+                  activeMenu === 'benefits'
+                    ? 'bg-white/20 text-white'
+                    : 'text-slate-100 hover:bg-white/10'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="text-sm font-semibold">Benefits</span>
+              </button>
+
+              {/* Features */}
+              <button
+                onClick={() => {
+                  setActiveMenu('features');
+                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className={`relative px-4 py-2 rounded-lg transition-all duration-300 group flex items-center gap-2 ${
+                  activeMenu === 'features'
+                    ? 'bg-white/20 text-white'
+                    : 'text-slate-100 hover:bg-white/10'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-semibold">Features</span>
+              </button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-lg hover:bg-white/10 transition"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+            
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => router.push('/login')}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold text-slate-100 border border-white/30 rounded-lg hover:bg-white/10 transition"
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold text-slate-100 border border-white/30 rounded-lg hover:bg-white/10 hover:border-white/50 transition duration-300"
               >
                 Log In
               </button>
               <button
-                onClick={() => document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' })}
-                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold bg-white text-slate-900 rounded-lg hover:bg-slate-100 shadow-md transition"
+                onClick={() => {
+                  setActiveMenu('signup');
+                  document.getElementById('signup')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold bg-white text-slate-900 rounded-lg hover:bg-slate-100 shadow-md transition duration-300 transform hover:scale-105"
               >
                 Sign Up
               </button>
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden pb-4 space-y-2 border-t border-slate-700 pt-4 animate-in fade-in">
+              <button
+                onClick={() => {
+                  setActiveMenu('home');
+                  document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' });
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition text-left"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h12a1 1 0 001-1V9m-9 16l4-4m0 0l4 4m-4-4v4m0-11l-4 4m0 0l-4-4" />
+                </svg>
+                <span className="text-sm font-semibold">Home</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveMenu('benefits');
+                  document.getElementById('benefits')?.scrollIntoView({ behavior: 'smooth' });
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition text-left"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="text-sm font-semibold">Benefits</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveMenu('features');
+                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition text-left"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-semibold">Features</span>
+              </button>
+            </div>
+          )}
         </div>
       </nav>
 
       <main className="pt-[74px]">
         {/* Hero - Who is this for? What problem does it solve? */}
-        <section className="pt-14 sm:pt-24 lg:pt-32 pb-14 sm:pb-20 px-4">
+        <section id="hero" className="pt-14 sm:pt-24 lg:pt-32 pb-14 sm:pb-20 px-4">
           <div className="max-w-6xl mx-auto">
             <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
               <div className="text-center lg:text-left">
@@ -188,7 +315,7 @@ export default function LandingPage() {
         </section>
 
         {/* What changes after they use? */}
-        <section className="py-16 px-4 bg-slate-50">
+        <section id="benefits" className="py-16 px-4 bg-slate-50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">What Changes After You Use MediTrack?</h2>
@@ -227,7 +354,7 @@ export default function LandingPage() {
         </section>
 
         {/* Main Features */}
-        <section className="py-16 px-4 bg-slate-50">
+        <section id="features" className="py-16 px-4 bg-slate-50">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl sm:text-4xl font-bold text-slate-900">Everything You Need</h2>

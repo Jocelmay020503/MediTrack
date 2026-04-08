@@ -53,12 +53,20 @@ function isWithinFilter(date: Date, filter: DateFilter) {
 export default function SalesPage() {
   const { loading, logout } = useAuth('seller');
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [logoKey, setLogoKey] = useState(0);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
   const [sales, setSales] = useState<Sale[]>([]);
   const [loadingSales, setLoadingSales] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLogoKey((k) => k + 1);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadSales = async () => {
     setLoadingSales(true);
@@ -112,27 +120,36 @@ export default function SalesPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg">
-        <div className="flex items-center justify-between px-4 sm:px-6 h-16">
+      <header className="bg-gradient-to-r from-slate-800 via-slate-800 to-slate-900 text-white shadow-lg relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-600/10 via-transparent to-transparent" />
+        <div className="flex items-center justify-between px-4 sm:px-6 h-16 relative">
           {/* Logo + Brand */}
-          <div className="flex items-center gap-3 min-w-0">
-            <Image
-              src="/logo.PNG"
-              alt="Logo"
-              width={36}
-              height={36}
-              className="rounded-lg object-contain shrink-0"
-            />
-            <span className="text-lg font-bold truncate">MediTrack</span>
+          <div className="flex items-center gap-3 min-w-0 group cursor-pointer" onClick={() => window.location.href = '/dashboard'}>
+            <div className="relative">
+              <Image
+                key={logoKey}
+                src="/logo.PNG"
+                alt="Logo"
+                width={36}
+                height={36}
+                className="rounded-lg object-contain shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 drop-shadow-lg"
+              />
+              <div className="absolute inset-0 rounded-lg bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
+            </div>
+            <span className="text-lg font-bold relative overflow-hidden">
+              <span className="transition-all duration-300 group-hover:text-blue-300 inline-block">MediTrack</span>
+            </span>
           </div>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-6 mx-6">
-            <Link href="/dashboard" className="text-white/70 hover:text-white font-medium transition text-sm">
-              Medicines
+            <Link href="/dashboard" className="text-white/70 hover:text-white font-medium transition text-sm relative group">
+              <span className="relative z-10">Medicines</span>
+              <div className="absolute inset-0 bg-white/10 rounded-lg scale-0 group-hover:scale-125 transition-transform duration-300" />
             </Link>
-            <Link href="/sales" className="text-white font-medium border-b-2 border-white pb-0.5 text-sm">
-              Sales
+            <Link href="/sales" className="text-white font-medium border-b-2 border-white pb-0.5 text-sm relative group">
+              <span className="relative z-10">Sales</span>
+              <div className="absolute inset-0 bg-white/10 rounded-lg scale-0 group-hover:scale-125 transition-transform duration-300" />
             </Link>
           </nav>
 
@@ -142,22 +159,22 @@ export default function SalesPage() {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 hover:bg-white/10 px-2 py-1.5 rounded-lg transition"
+                className="flex items-center gap-2 hover:bg-white/10 px-2 py-1.5 rounded-lg transition group"
               >
-                <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="w-8 h-8 bg-gradient-to-br from-slate-500 to-slate-700 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
                   S
                 </div>
-                <span className="text-sm hidden sm:block">Seller</span>
-                <svg className={`w-4 h-4 transition-transform shrink-0 ${showUserMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="text-sm hidden sm:block group-hover:text-blue-300 transition-colors duration-300">Seller</span>
+                <svg className={`w-4 h-4 transition-transform duration-300 shrink-0 ${showUserMenu ? 'rotate-180' : 'group-hover:translate-y-0.5'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+                <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   <button
                     onClick={logout}
-                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors duration-200"
                   >
                     <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -172,11 +189,13 @@ export default function SalesPage() {
 
         {/* Mobile nav row */}
         <nav className="md:hidden px-4 pb-2 flex items-center gap-2">
-          <Link href="/dashboard" className="px-3 py-1.5 rounded-md bg-white/10 text-white text-sm font-semibold">
-            Medicines
+          <Link href="/dashboard" className="px-3 py-1.5 rounded-md bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-all duration-300 relative overflow-hidden group">
+            <span className="relative z-10">Medicines</span>
+            <div className="absolute inset-0 bg-white/10 scale-0 group-hover:scale-100 transition-transform duration-300" />
           </Link>
-          <Link href="/sales" className="px-3 py-1.5 rounded-md bg-white text-slate-900 text-sm font-semibold">
-            Sales
+          <Link href="/sales" className="px-3 py-1.5 rounded-md bg-white text-slate-900 text-sm font-semibold shadow-md relative overflow-hidden group">
+            <span className="relative z-10">Sales</span>
+            <div className="absolute inset-0 bg-blue-500/20 scale-0 group-hover:scale-100 transition-transform duration-300" />
           </Link>
         </nav>
       </header>

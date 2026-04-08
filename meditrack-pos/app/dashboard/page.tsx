@@ -47,8 +47,16 @@ export default function Dashboard() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [logoKey, setLogoKey] = useState(0);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLogoKey((k) => k + 1);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   const loadMedicines = async () => {
     setLoadingMedicines(true);
@@ -245,42 +253,51 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-lg">
-        <div className="flex items-center justify-between px-4 sm:px-6 h-16">
+      <header className="bg-gradient-to-r from-slate-800 via-slate-800 to-slate-900 text-white shadow-lg relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-600/10 via-transparent to-transparent" />
+        <div className="flex items-center justify-between px-4 sm:px-6 h-16 relative">
           {/* Logo + Brand */}
-          <div className="flex items-center gap-3 min-w-0">
-            <Image
-              src="/logo.PNG"
-              alt="Logo"
-              width={36}
-              height={36}
-              className="rounded-lg object-contain shrink-0"
-            />
-            <span className="text-lg font-bold truncate">MediTrack</span>
+          <div className="flex items-center gap-3 min-w-0 group cursor-pointer" onClick={() => window.location.href = '/dashboard'}>
+            <div className="relative">
+              <Image
+                key={logoKey}
+                src="/logo.PNG"
+                alt="Logo"
+                width={36}
+                height={36}
+                className="rounded-lg object-contain shrink-0 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 drop-shadow-lg"
+              />
+              <div className="absolute inset-0 rounded-lg bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm" />
+            </div>
+            <span className="text-lg font-bold relative overflow-hidden">
+              <span className="transition-all duration-300 group-hover:text-blue-300 inline-block">MediTrack</span>
+            </span>
           </div>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-6 mx-6">
-            <Link href="/dashboard" className="text-white font-medium border-b-2 border-white pb-0.5 text-sm">
-              Medicines
+            <Link href="/dashboard" className="text-white font-medium border-b-2 border-white pb-0.5 text-sm relative group">
+              <span className="relative z-10">Medicines</span>
+              <div className="absolute inset-0 bg-white/10 rounded-lg scale-0 group-hover:scale-125 transition-transform duration-300" />
             </Link>
-            <Link href="/sales" className="text-white/70 hover:text-white font-medium transition text-sm">
-              Sales
+            <Link href="/sales" className="text-white/70 hover:text-white font-medium transition text-sm relative group">
+              <span className="relative z-10">Sales</span>
+              <div className="absolute inset-0 bg-white/10 rounded-lg scale-0 group-hover:scale-125 transition-transform duration-300" />
             </Link>
           </nav>
 
           {/* Right actions */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             {/* Search */}
-            <div className="relative hidden sm:block">
+            <div className="relative hidden sm:block group">
               <input
                 type="text"
                 placeholder="Search medicines..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 pl-8 text-sm text-white placeholder-white/50 focus:outline-none focus:bg-white/20 focus:border-white/40 w-40 lg:w-52 transition"
+                className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 pl-8 text-sm text-white placeholder-white/50 focus:outline-none focus:bg-white/20 focus:border-white/40 w-40 lg:w-52 transition-all duration-300 group-hover:bg-white/15"
               />
-              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 transition-colors duration-300 group-focus-within:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -289,20 +306,20 @@ export default function Dashboard() {
             <div className="relative" ref={notificationRef}>
               <button 
                 onClick={() => setShowNotificationDropdown(!showNotificationDropdown)}
-                className="relative p-2 hover:bg-white/10 rounded-lg transition"
+                className="relative p-2 hover:bg-white/10 rounded-lg transition group"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
                 {notification > 0 && (
-                  <span className="absolute top-0.5 right-0.5 bg-red-500 text-xs w-4 h-4 flex items-center justify-center rounded-full leading-none">
+                  <span className="absolute top-0.5 right-0.5 bg-red-500 text-xs w-4 h-4 flex items-center justify-center rounded-full leading-none animate-pulse">
                     {notification}
                   </span>
                 )}
               </button>
 
               {showNotificationDropdown && (
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50">
+                <div className="absolute right-0 mt-2 w-72 bg-white rounded-lg shadow-lg border border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   <div className="px-4 py-2 border-b">
                     <h3 className="font-semibold text-slate-800">Notifications</h3>
                   </div>
@@ -340,13 +357,13 @@ export default function Dashboard() {
             {/* Cart */}
             <button
               onClick={() => setShowCart(!showCart)}
-              className="relative p-2 hover:bg-white/10 rounded-lg transition"
+              className="relative p-2 hover:bg-white/10 rounded-lg transition group"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               {cartCount > 0 && (
-                <span className="absolute top-0.5 right-0.5 bg-blue-500 text-xs w-4 h-4 flex items-center justify-center rounded-full leading-none">
+                <span className="absolute top-0.5 right-0.5 bg-blue-500 text-xs w-4 h-4 flex items-center justify-center rounded-full leading-none animate-bounce">
                   {cartCount}
                 </span>
               )}
@@ -356,22 +373,22 @@ export default function Dashboard() {
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 hover:bg-white/10 px-2 py-1.5 rounded-lg transition"
+                className="flex items-center gap-2 hover:bg-white/10 px-2 py-1.5 rounded-lg transition group"
               >
-                <div className="w-8 h-8 bg-slate-600 rounded-full flex items-center justify-center text-sm font-semibold shrink-0">
+                <div className="w-8 h-8 bg-gradient-to-br from-slate-500 to-slate-700 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
                   S
                 </div>
-                <span className="text-sm hidden sm:block">Seller</span>
-                <svg className={`w-4 h-4 transition-transform shrink-0 ${showUserMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="text-sm hidden sm:block group-hover:text-blue-300 transition-colors duration-300">Seller</span>
+                <svg className={`w-4 h-4 transition-transform duration-300 shrink-0 ${showUserMenu ? 'rotate-180' : 'group-hover:translate-y-0.5'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
               {showUserMenu && (
-                <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50">
+                <div className="absolute top-full right-0 mt-2 w-44 bg-white rounded-lg shadow-lg border border-slate-200 py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
                   <button
                     onClick={handleLogout}
-                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors duration-200"
                   >
                     <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
@@ -386,13 +403,13 @@ export default function Dashboard() {
 
         {/* Mobile search row */}
         <div className="sm:hidden px-4 pb-2">
-          <div className="relative">
+          <div className="relative group">
             <input
               type="text"
               placeholder="Search medicines..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 pl-8 text-sm text-white placeholder-white/50 focus:outline-none focus:bg-white/20 focus:border-white/40 transition"
+              className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 pl-8 text-sm text-white placeholder-white/50 focus:outline-none focus:bg-white/20 focus:border-white/40 transition-all duration-300"
             />
             <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -402,11 +419,13 @@ export default function Dashboard() {
 
         {/* Mobile nav row */}
         <nav className="md:hidden flex items-center gap-2 px-4 pb-2">
-          <Link href="/dashboard" className="px-3 py-1.5 rounded-md bg-white text-slate-900 text-sm font-semibold">
-            Medicines
+          <Link href="/dashboard" className="px-3 py-1.5 rounded-md bg-white text-slate-900 text-sm font-semibold shadow-md relative overflow-hidden group">
+            <span className="relative z-10">Medicines</span>
+            <div className="absolute inset-0 bg-blue-500/20 scale-0 group-hover:scale-100 transition-transform duration-300" />
           </Link>
-          <Link href="/sales" className="px-3 py-1.5 rounded-md bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition">
-            Sales
+          <Link href="/sales" className="px-3 py-1.5 rounded-md bg-white/10 text-white text-sm font-semibold hover:bg-white/20 transition-all duration-300 relative overflow-hidden group">
+            <span className="relative z-10">Sales</span>
+            <div className="absolute inset-0 bg-white/10 scale-0 group-hover:scale-100 transition-transform duration-300" />
           </Link>
         </nav>
       </header>
