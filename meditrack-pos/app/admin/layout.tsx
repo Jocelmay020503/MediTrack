@@ -205,7 +205,7 @@ export default function AdminLayout({
       </aside>
 
       <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'md:ml-64' : 'md:ml-20'}`}>
-        <header className="bg-white shadow-md border-b relative overflow-hidden">
+        <header className="bg-white shadow-md border-b relative">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-50/50 via-transparent to-purple-50/50 opacity-0 hover:opacity-100 transition-opacity duration-500" />
           <div className="flex items-center justify-between px-4 sm:px-6 py-4 relative">
             <div className="flex items-center gap-3">
